@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MicroCure — Nano-Medical Combat</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ============ TITLE SCREEN ============ -->
+  <div id="titleScreen" class="screen active">
+    <div class="title-content">
+      <h1 class="game-title">🧬 MICROCURE</h1>
+      <p class="game-subtitle">Nano-Medical Combat Operations</p>
+      <p class="game-tagline">You are humanity's last line of defense — shrunk to 7 micrometers,<br>injected into dying patients, fighting disease at the cellular level.</p>
+      <button id="btnEnterHub" class="btn btn-large">ENTER NEXUS HOSPITAL</button>
+      <div class="controls-preview">
+        <p><strong>Controls:</strong> WASD = Move | Mouse = Aim | Click = Fire | R = Reload</p>
+        <p>SPACE = Dash | Q = Shield | E = Grenade | 1-3 = Switch Weapons | Hold Click = Charge</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ HUB SCREEN (Hospital Lobby) ============ -->
+  <div id="hubScreen" class="screen">
+    <div class="hub-header">
+      <h1>🏥 NEXUS MEDICAL INSTITUTE</h1>
+      <div class="hub-stats">
+        <span>💰 Credits: <strong id="hubCredits">0</strong></span>
+        <span>⭐ Level: <strong id="hubLevel">1</strong></span>
+        <span>🏆 Score: <strong id="totalScore">0</strong></span>
+        <span>🧬 Cured: <strong id="curedCount">0</strong>/<span id="totalCases">6</span></span>
+        <span>🔫 Weapons: <strong id="weaponsOwned">3</strong>/<span id="weaponsTotal">8</span></span>
+        <span>⚗ Upgrades: <strong id="upgradesOwned">0</strong></span>
+      </div>
+    </div>
+    <div class="hub-rooms">
+      <div id="cardPatients" class="hub-card">
+        <div class="card-icon">🛏️</div>
+        <h2>PATIENT WARD</h2>
+        <p>Review active cases. Select a patient and inject yourself to fight their disease.</p>
+        <p class="card-action">→ Click to Enter</p>
+      </div>
+      <div id="cardShop" class="hub-card">
+        <div class="card-icon">🔫</div>
+        <h2>ARMORY</h2>
+        <p>Purchase and equip new weapons. Specialized loadouts for different missions.</p>
+        <p class="card-action">→ Click to Enter</p>
+      </div>
+      <div id="cardUpgrades" class="hub-card">
+        <div class="card-icon">⚗️</div>
+        <h2>BIO-LAB</h2>
+        <p>Permanent upgrades to your nano-suit. Health, speed, shields, and more.</p>
+        <p class="card-action">→ Click to Enter</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ MISSION SELECT ============ -->
+  <div id="missionSelect" class="screen">
+    <div class="screen-header">
+      <h1>🛏️ PATIENT WARD</h1>
+      <div>💰 Credits: <strong id="msCredits">0</strong></div>
+      <button id="btnBackFromMission" class="btn">← Back to Hub</button>
+    </div>
+    <div id="patientList" class="patient-list"></div>
+  </div>
+
+  <!-- ============ SHOP SCREEN ============ -->
+  <div id="shopScreen" class="screen">
+    <div class="screen-header">
+      <h1>🔫 ARMORY</h1>
+      <div>💰 Credits: <strong id="shopCredits">0</strong></div>
+      <button id="btnBackFromShop" class="btn">← Back to Hub</button>
+    </div>
+    <p class="screen-info">Buy new weapons with credits earned from missions. Slot 3 can be swapped for any owned weapon.</p>
+    <div id="shopGrid" class="shop-grid"></div>
+  </div>
+
+  <!-- ============ UPGRADES SCREEN (Bio-Lab) ============ -->
+  <div id="upgradeScreen" class="screen">
+    <div class="screen-header">
+      <h1>⚗️ BIO-LAB</h1>
+      <div>💰 Credits: <strong id="upgradeCredits">0</strong></div>
+      <button id="btnBackFromUpgrades" class="btn">← Back to Hub</button>
+    </div>
+    <p class="screen-info">Permanent upgrades to your nano-suit. Effects persist across all missions.</p>
+    <div id="upgradeGrid" class="upgrade-grid"></div>
+  </div>
+
+  <!-- ============ MISSION BRIEFING OVERLAY ============ -->
+  <div id="missionBriefing" class="overlay">
+    <div class="overlay-content">
+      <h1 id="briefingTitle">CASE FILE</h1>
+      <div class="briefing-info">
+        <p><strong>Patient:</strong> <span id="briefingPatient"></span></p>
+        <p><strong>Status:</strong> <span id="briefingDesc"></span></p>
+        <p><strong>Infection Route:</strong> <span id="briefingOrgans"></span></p>
+        <p><strong>Par Time:</strong> <span id="briefingTime"></span></p>
+      </div>
+      <div id="briefingObjectives" class="briefing-objectives"></div>
+      <div class="briefing-actions">
+        <button id="btnCancelMission" class="btn">CANCEL</button>
+        <button id="btnConfirmMission" class="btn btn-primary">💉 INJECT NOW</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ MID-MISSION UPGRADE CHOICE ============ -->
+  <div id="upgradeChoice" class="overlay">
+    <div class="overlay-content">
+      <h1>🧬 BIO-ADAPTATION</h1>
+      <p>Organ cleared! Choose a temporary boost for the rest of this mission:</p>
+      <div id="choiceGrid" class="choice-grid"></div>
+    </div>
+  </div>
+
+  <!-- ============ MISSION COMPLETE ============ -->
+  <div id="missionComplete" class="overlay">
+    <div class="overlay-content">
+      <h1>✅ PATIENT CURED</h1>
+      <div class="results">
+        <p>Time: <strong id="mcTime"></strong> / Par: <strong id="mcParTime"></strong></p>
+        <p>Score: <strong id="mcScore"></strong></p>
+        <p>Level Reached: <strong id="mcLevel"></strong></p>
+        <hr>
+        <p>Base Reward: 💰 <strong id="mcBaseReward"></strong></p>
+        <p id="mcTimeBonusRow">Time Bonus: 💰 <strong id="mcTimeBonus"></strong></p>
+        <p id="mcTimePenaltyRow">Time Penalty: 💰 -<strong id="mcTimePenalty"></strong></p>
+        <hr>
+        <p class="total-reward">TOTAL: 💰 <strong id="mcTotal"></strong></p>
+      </div>
+      <button id="btnCompleteToHub" class="btn btn-primary">RETURN TO HOSPITAL</button>
+    </div>
+  </div>
+
+  <!-- ============ GAME OVER ============ -->
+  <div id="gameOver" class="overlay">
+    <div class="overlay-content">
+      <h1>💀 PATIENT LOST</h1>
+      <p>The infection overwhelmed you. Your nano-suit failed.</p>
+      <div class="results">
+        <p>Time Survived: <strong id="goTime"></strong></p>
+        <p>Partial Credits Earned: 💰 <strong id="goCredits"></strong></p>
+      </div>
+      <div class="briefing-actions">
+        <button id="btnGameOverHub" class="btn">RETURN TO HUB</button>
+        <button id="btnGameOverRetry" class="btn btn-primary">RETRY MISSION</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ GAME CANVAS ============ -->
+  <canvas id="gameCanvas" width="1280" height="720"></canvas>
+
+  <!-- ============ IN-GAME HUD ============ -->
+  <div id="hud">
+    <!-- Top-left: Health/Shield/XP -->
+    <div class="hud-panel hud-top-left">
+      <div class="bar-row">
+        <span class="bar-label">❤ HP</span>
+        <div class="bar-track"><div id="healthBar" class="bar-fill bar-health"></div></div>
+        <span class="bar-text"><span id="healthText">100</span>/<span id="maxHealthText">100</span></span>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">🛡 SH</span>
+        <div class="bar-track"><div id="shieldBar" class="bar-fill bar-shield"></div></div>
+        <span class="bar-text"><span id="shieldText">0</span></span>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">⭐ Lv<span id="levelText">1</span></span>
+        <div class="bar-track"><div id="xpBar" class="bar-fill bar-xp"></div></div>
+        <span class="bar-text"><span id="xpText">0</span>/<span id="xpNextText">100</span></span>
+      </div>
+    </div>
+
+    <!-- Top-right: Mission info -->
+    <div class="hud-panel hud-top-right">
+      <div class="mission-info">
+        <div class="mission-title">🦠 <span id="missionName">—</span></div>
+        <div>📍 Organ: <span id="organText">—</span> (<span id="organsCleared">0</span>/<span id="organsTotal">0</span>)</div>
+        <div>👹 Enemies: <span id="enemyCount">0</span></div>
+        <div>🏆 Score: <span id="scoreText">0</span></div>
+      </div>
+    </div>
+
+    <!-- Bottom-left: Timer -->
+    <div class="hud-panel hud-bottom-left">
+      <div class="timer-info">
+        <div>⏱ <span id="timerText">0:00</span> / Par <span id="parTimeText">0:00</span></div>
+        <div class="bar-track timer-track"><div id="timerBar" class="bar-fill bar-timer"></div></div>
+        <div>💰 Earned: <span id="creditsEarned">0</span></div>
+      </div>
+    </div>
+
+    <!-- Bottom-right: Weapon/Ammo/Abilities -->
+    <div class="hud-panel hud-bottom-right">
+      <div class="weapon-info">
+        <div class="weapon-name" id="weaponName">—</div>
+        <div class="ammo-line">🔫 <span id="ammoText">0</span>/<span id="maxAmmoText">0</span> | Reserve <span id="reserveText">0</span></div>
+        <div class="bar-row">
+          <span class="bar-label">⚡</span>
+          <div class="bar-track"><div id="chargeBar" class="bar-fill bar-charge"></div></div>
+        </div>
+        <div class="abilities">
+          <div>💣 <span id="grenadeText">0/0</span></div>
+          <div>🛡 <span id="shieldCDText">Ready</span></div>
+          <div>💨 <span id="dashCDText">Ready</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center: Floating messages -->
+    <div id="messageOverlay" class="message-overlay"></div>
+
+    <!-- Damage flash -->
+    <div id="damageFlash" class="damage-flash"></div>
+  </div>
+
+  <!-- ============ SCRIPTS ============ -->
+  <script src="js/config.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/input.js"></script>
+  <script src="js/weapons.js"></script>
+  <script src="js/particles.js"></script>
+  <script src="js/projectiles.js"></script>
+  <script src="js/pickups.js"></script>
+  <script src="js/hazards.js"></script>
+  <script src="js/obstacles.js"></script>
+  <script src="js/enemies.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/organs.js"></script>
+  <script src="js/upgrades.js"></script>
+  <script src="js/hud.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/game.js"></script>
+
+</body>
+</html>
