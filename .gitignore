@@ -1,0 +1,21 @@
+# Dependencies and build output are reproduced by npm/CI.
+node_modules/
+dist/
+*.log
+
+# Local capture libraries. design/shots alone is >300 MB of working PNGs and
+# screenshots/ is the old prototype gallery; neither is a source asset.
+screenshots/
+design/shots/
+
+# Machine and editor state.
+.DS_Store
+.freebuff/
+.idea/
+.vscode/
+*.swp
+
+# Secrets. The build has none, but keep local overrides out of history.
+.env
+.env.*
+!.env.example

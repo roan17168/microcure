@@ -1,0 +1,1883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MicroCure — Design Interrogation</title>
+<style>
+  :root{
+    --bg:#040709;
+    --bg-2:#061016;
+    --panel:#081318;
+    --panel-2:#0b1a21;
+    --ink:#e9f6f2;
+    --muted:#8aa4a6;
+    --teal:#4ff5cf;
+    --teal-dim:#2b9f8b;
+    --teal-soft:rgba(79,245,207,.1);
+    --magenta:#ff5aa5;
+    --amber:#ffc96b;
+    --red:#ff6b78;
+    --line:rgba(147,220,210,.14);
+    --line-strong:rgba(147,220,210,.3);
+    --mono:"SFMono-Regular", "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+    --sans:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    min-height:100vh;
+    background:
+      radial-gradient(1100px 700px at 85% -10%, rgba(255,90,165,.07), transparent 60%),
+      radial-gradient(900px 650px at 5% 105%, rgba(79,245,207,.06), transparent 55%),
+      var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+    line-height:1.5;
+  }
+  button{font:inherit;color:inherit}
+  ::selection{background:rgba(79,245,207,.28);color:#fff}
+  .bg-grid{
+    position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:
+      linear-gradient(rgba(120,220,210,.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(120,220,210,.035) 1px, transparent 1px);
+    background-size:56px 56px;
+    -webkit-mask-image:radial-gradient(ellipse at 50% 15%, #000 0%, transparent 78%);
+    mask-image:radial-gradient(ellipse at 50% 15%, #000 0%, transparent 78%);
+  }
+  .app{
+    position:relative;z-index:1;
+    display:grid;
+    grid-template-columns:296px minmax(0,1fr);
+    width:100%;max-width:1460px;margin:0 auto;
+    min-height:100vh;
+  }
+
+  /* ---------- RAIL ---------- */
+  .rail{
+    position:sticky;top:0;height:100vh;overflow-y:auto;min-width:0;
+    display:flex;flex-direction:column;gap:22px;
+    padding:30px 22px 24px;
+    background:rgba(4,9,11,.78);
+    border-right:1px solid var(--line);
+    backdrop-filter:blur(14px);
+    scrollbar-width:thin;
+  }
+  .brand{display:flex;align-items:center;gap:12px}
+  .mark{
+    width:38px;height:38px;display:grid;place-items:center;flex:0 0 auto;
+    color:var(--teal);font-size:18px;font-weight:400;
+    border:1px solid rgba(79,245,207,.45);
+    background:linear-gradient(135deg, rgba(79,245,207,.14), rgba(79,245,207,.02));
+    box-shadow:0 0 18px rgba(79,245,207,.12), inset 0 0 16px rgba(79,245,207,.05);
+  }
+  .brand-name{font-family:var(--mono);font-size:14px;letter-spacing:3px;color:var(--ink)}
+  .brand-sub{font-family:var(--mono);font-size:8.5px;letter-spacing:1.7px;color:var(--muted);margin-top:3px}
+  .ecg{width:100%;height:34px;overflow:visible;opacity:.8}
+  .ecg polyline{
+    fill:none;stroke:var(--teal);stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round;
+    vector-effect:non-scaling-stroke;
+    stroke-dasharray:280;
+    filter:drop-shadow(0 0 4px rgba(79,245,207,.45));
+    animation:ecg 4.5s linear infinite;
+  }
+  @keyframes ecg{from{stroke-dashoffset:280}to{stroke-dashoffset:-280}}
+  .progress-card{
+    border:1px solid var(--line);background:linear-gradient(180deg, rgba(11,26,33,.72), rgba(6,14,18,.4));
+    padding:13px 13px 11px;
+  }
+  .progress-top{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--mono);font-size:9px;letter-spacing:1.3px;color:var(--muted)}
+  .progress-top strong{color:var(--teal);font-size:10px;font-weight:400}
+  .progress-track{height:4px;background:rgba(255,255,255,.07);margin-top:9px;overflow:hidden}
+  .progress-bar{height:100%;width:0;background:linear-gradient(90deg, var(--teal-dim), var(--teal));box-shadow:0 0 10px rgba(79,245,207,.5);transition:width .3s ease}
+  .save-line{display:flex;align-items:center;gap:6px;margin-top:9px;font-family:var(--mono);font-size:8.5px;color:var(--muted);letter-spacing:.4px}
+  .pulse{width:5px;height:5px;border-radius:50%;background:var(--teal);box-shadow:0 0 8px var(--teal);animation:pulse 2.4s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:.35}50%{opacity:1}}
+  .section-nav{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .nav-item{
+    display:grid;grid-template-columns:23px minmax(0,1fr) auto;gap:8px;align-items:center;
+    width:100%;padding:9px 9px;border:1px solid transparent;border-left:2px solid transparent;
+    background:none;text-align:left;cursor:pointer;color:var(--muted);
+    font-size:11.5px;letter-spacing:.2px;
+    transition:background .16s,color .16s,border-color .16s;
+  }
+  .nav-item:hover{color:var(--ink);background:rgba(255,255,255,.03)}
+  .nav-item.active{color:var(--ink);background:linear-gradient(90deg, rgba(79,245,207,.1), transparent);border-left-color:var(--teal)}
+  .nav-num{font-family:var(--mono);font-size:9px;color:var(--teal-dim)}
+  .nav-item.active .nav-num{color:var(--teal)}
+  .nav-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .nav-count{font-family:var(--mono);font-size:8.5px;color:var(--muted);opacity:.8}
+  .nav-item.done .nav-count{color:var(--teal)}
+  .rail-foot{margin-top:auto;border-top:1px solid var(--line);padding-top:14px}
+  .ghost-btn{
+    background:none;border:1px solid transparent;color:var(--muted);
+    font-family:var(--mono);font-size:9.5px;letter-spacing:1px;text-transform:uppercase;
+    padding:5px 0;cursor:pointer;transition:color .16s;
+  }
+  .ghost-btn:hover{color:var(--teal)}
+  .rail-foot p{font-family:var(--mono);font-size:8.5px;color:rgba(138,164,166,.65);margin-top:5px;line-height:1.5}
+
+  /* ---------- MAIN ---------- */
+  .main{min-width:0;width:100%;max-width:1040px;margin:0 auto;padding:28px clamp(22px,4vw,54px) 34px;display:flex;flex-direction:column}
+  .topline{display:flex;justify-content:space-between;align-items:center;gap:16px;padding-bottom:14px;border-bottom:1px solid var(--line);margin-bottom:38px}
+  .crumb{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:9.5px;letter-spacing:1.4px;color:var(--muted);text-transform:uppercase;min-width:0}
+  .crumb .dot{width:3px;height:3px;background:var(--teal);border-radius:50%;box-shadow:0 0 6px var(--teal);flex:0 0 auto}
+  .crumb span{white-space:nowrap}
+  .crumb span:last-child{overflow:hidden;text-overflow:ellipsis;color:rgba(138,164,166,.7)}
+  .top-actions{flex:0 0 auto}
+  .top-actions .ghost-btn{color:var(--teal);border-color:rgba(79,245,207,.25);padding:6px 10px;transition:background .16s,border-color .16s}
+  .top-actions .ghost-btn:hover{background:rgba(79,245,207,.08);border-color:var(--teal)}
+
+  .section-head{margin-bottom:26px}
+  .kicker{font-family:var(--mono);font-size:9.5px;letter-spacing:2.6px;text-transform:uppercase;color:var(--teal)}
+  .section-head h1{
+    font-size:clamp(38px, 5.2vw, 58px);line-height:1.02;letter-spacing:-1.8px;font-weight:650;
+    margin:11px 0 13px;
+  }
+  .section-blurb{max-width:660px;color:var(--muted);font-size:14px;line-height:1.65}
+  .intro{
+    display:grid;grid-template-columns:1.4fr 1fr;gap:24px;
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+    padding:18px 0;margin:24px 0 4px;
+  }
+  .intro p{color:var(--muted);font-size:13px;line-height:1.7}
+  .intro p strong{color:var(--ink);font-weight:600}
+  .intro-meta{display:flex;flex-wrap:wrap;gap:7px;align-content:flex-start}
+  .meta-chip{font-family:var(--mono);font-size:8.5px;letter-spacing:1.1px;text-transform:uppercase;color:var(--teal);border:1px solid rgba(79,245,207,.25);background:rgba(79,245,207,.05);padding:5px 7px;white-space:nowrap}
+
+  .q{
+    position:relative;
+    border:1px solid var(--line);
+    background:linear-gradient(180deg, rgba(10,25,30,.62), rgba(6,14,18,.58));
+    padding:22px 22px 20px;
+    margin-top:15px;
+  }
+  .q::before{content:"";position:absolute;left:-1px;top:-1px;width:38px;height:1px;background:var(--teal);opacity:.65}
+  .q-top{display:flex;align-items:baseline;gap:12px}
+  .q-index{font-family:var(--mono);font-size:9.5px;letter-spacing:.6px;color:var(--teal-dim);flex:0 0 auto;padding-top:2px}
+  .q h3{font-size:16.5px;line-height:1.4;font-weight:600;letter-spacing:-.1px}
+  .why{color:var(--muted);font-size:12px;line-height:1.55;margin:7px 0 0 34px;max-width:720px}
+  .q-note{
+    display:inline-block;margin:9px 0 0 34px;padding:3px 6px;
+    font-family:var(--mono);font-size:8px;letter-spacing:1.1px;text-transform:uppercase;
+    color:var(--amber);border:1px solid rgba(255,201,107,.28);background:rgba(255,201,107,.05);
+  }
+  .opts{display:grid;gap:7px;margin:14px 0 0 34px}
+  .opt{
+    display:grid;grid-template-columns:17px minmax(0,1fr);gap:11px;align-items:start;
+    width:100%;padding:11px 13px;text-align:left;cursor:pointer;
+    border:1px solid rgba(255,255,255,.075);
+    background:rgba(255,255,255,.018);
+    transition:border-color .15s,background .15s,transform .15s;
+  }
+  .opt:hover{border-color:rgba(79,245,207,.42);background:rgba(79,245,207,.04)}
+  .opt:focus-visible{outline:1px solid var(--teal);outline-offset:2px}
+  .mark{
+    width:15px;height:15px;margin-top:2px;border:1px solid rgba(138,164,166,.55);border-radius:50%;
+    display:grid;place-items:center;transition:border-color .15s,background .15s,box-shadow .15s;flex:0 0 auto;
+  }
+  .mark::after{content:"";width:5px;height:5px;border-radius:50%;background:#03100d;opacity:0;transform:scale(.4);transition:opacity .15s,transform .15s}
+  .multi-q .mark{border-radius:3px}
+  .opt[aria-checked="true"]{border-color:rgba(79,245,207,.58);background:linear-gradient(90deg, rgba(79,245,207,.105), rgba(79,245,207,.02))}
+  .opt[aria-checked="true"] .mark{border-color:var(--teal);background:var(--teal);box-shadow:0 0 10px rgba(79,245,207,.35)}
+  .opt[aria-checked="true"] .mark::after{opacity:1;transform:scale(1)}
+  .copy{min-width:0}
+  .label{display:block;color:var(--ink);font-size:13.5px;font-weight:600;line-height:1.35}
+  .detail{display:block;color:var(--muted);font-size:12px;line-height:1.5;margin-top:2px}
+  .q.nudge{animation:nudge .3s ease}
+  @keyframes nudge{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+
+  .sec-actions{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:28px;padding-top:20px;border-top:1px solid var(--line);flex-wrap:wrap}
+  .sec-progress{font-family:var(--mono);font-size:9px;letter-spacing:.7px;color:var(--muted);text-transform:uppercase}
+  .sec-progress b{color:var(--teal);font-weight:400}
+  .actions-group{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{
+    appearance:none;cursor:pointer;border:1px solid var(--line-strong);background:rgba(255,255,255,.025);
+    color:var(--ink);padding:10px 15px;font-family:var(--mono);font-size:10px;letter-spacing:1.15px;
+    text-transform:uppercase;transition:background .16s,border-color .16s,color .16s,box-shadow .16s;
+  }
+  .btn:hover{border-color:var(--teal);color:var(--teal);background:rgba(79,245,207,.06)}
+  .btn.primary{background:var(--teal);border-color:var(--teal);color:#02100c;font-weight:700;box-shadow:0 0 26px rgba(79,245,207,.16)}
+  .btn.primary:hover{background:#93ffe2;border-color:#93ffe2;color:#02100c;box-shadow:0 0 34px rgba(79,245,207,.26)}
+  .btn.ghost{background:none;border-color:transparent;color:var(--muted)}
+  .btn.ghost:hover{color:var(--teal);border-color:var(--line)}
+  .btn:disabled{opacity:.3;cursor:not-allowed;box-shadow:none}
+  .btn:disabled:hover{background:rgba(255,255,255,.025);border-color:var(--line-strong);color:var(--ink)}
+
+  .notes-card{margin-top:18px;border:1px dashed rgba(147,220,210,.25);background:rgba(8,19,24,.5);padding:18px}
+  .notes-card label{display:block;font-family:var(--mono);font-size:9px;letter-spacing:1.4px;text-transform:uppercase;color:var(--teal)}
+  .notes-card .notes-hint{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.5}
+  textarea{
+    width:100%;min-height:98px;margin-top:11px;resize:vertical;padding:11px 12px;
+    background:#040c10;border:1px solid var(--line);color:var(--ink);
+    font-family:var(--sans);font-size:13px;line-height:1.6;outline:none;
+  }
+  textarea:focus{border-color:rgba(79,245,207,.6);box-shadow:0 0 0 2px rgba(79,245,207,.06)}
+  textarea::placeholder{color:rgba(138,164,166,.5)}
+
+  /* ---------- RESULTS ---------- */
+  .results-head h1{font-size:clamp(38px,5.4vw,62px);letter-spacing:-2px;line-height:1.02;margin:10px 0 14px}
+  .results-head p{max-width:660px;color:var(--muted);font-size:14px;line-height:1.65}
+  .fingerprint{display:grid;grid-template-columns:repeat(auto-fit,minmax(172px,1fr));gap:7px;margin:26px 0 8px}
+  .fp{border:1px solid var(--line);background:rgba(8,19,24,.6);padding:12px;min-height:78px}
+  .fp-label{font-family:var(--mono);font-size:8px;letter-spacing:1.3px;text-transform:uppercase;color:var(--muted)}
+  .fp-value{margin-top:6px;font-size:12.5px;line-height:1.4;color:var(--ink)}
+  .fp.missing .fp-value{color:rgba(138,164,166,.65);font-style:italic}
+  .warning{
+    display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+    border:1px solid rgba(255,201,107,.28);background:rgba(255,201,107,.05);
+    padding:10px 13px;margin:14px 0 0;
+  }
+  .warning p{font-size:12px;color:var(--amber);line-height:1.5}
+  .warning .ghost-btn{color:var(--amber)}
+  .brief-shell{border:1px solid var(--line);background:#040b0f;margin-top:20px}
+  .brief-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 13px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:9px;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase}
+  .brief-bar .live{display:inline-flex;align-items:center;gap:6px;color:var(--teal)}
+  .brief-actions{display:flex;gap:6px;flex-wrap:wrap}
+  .brief-actions .btn{padding:6px 9px;font-size:8.5px}
+  .brief{
+    max-height:440px;overflow:auto;padding:18px;white-space:pre-wrap;word-break:break-word;
+    font-family:var(--mono);font-size:11px;line-height:1.65;color:#c7ded9;
+    scrollbar-width:thin;
+  }
+  .result-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+  .main-foot{
+    margin-top:auto;padding-top:30px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    font-family:var(--mono);font-size:8.5px;letter-spacing:.8px;color:rgba(138,164,166,.55);text-transform:uppercase;
+  }
+
+  #toast{
+    position:fixed;left:50%;bottom:24px;transform:translate(-50%,14px);
+    z-index:50;padding:9px 14px;border:1px solid rgba(79,245,207,.4);
+    background:rgba(4,14,15,.96);color:var(--teal);
+    font-family:var(--mono);font-size:10px;letter-spacing:.8px;
+    opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;
+    box-shadow:0 4px 30px rgba(0,0,0,.5);
+  }
+  #toast.show{opacity:1;transform:translate(-50%,0)}
+
+  @media (max-width:1020px){
+    .app{grid-template-columns:minmax(0,1fr)}
+    .rail{position:relative;top:auto;height:auto;width:100%;max-width:100vw;overflow:visible;border-right:none;border-bottom:1px solid var(--line);padding:20px 20px 16px;gap:15px}
+    .brand{justify-content:flex-start}
+    .ecg{height:24px;max-width:260px}
+    .progress-card{max-width:420px}
+    .section-nav{flex-direction:row;width:100%;max-width:100%;overflow-x:auto;gap:6px;padding-bottom:4px;scrollbar-width:thin}
+    .nav-item{grid-template-columns:20px auto auto;min-width:172px;border:1px solid var(--line);border-left-width:1px;padding:8px 9px}
+    .nav-item.active{border-color:rgba(79,245,207,.45);border-left-color:rgba(79,245,207,.45)}
+    .rail-foot{display:none}
+    .main{max-width:none;padding-top:26px}
+  }
+  @media (max-width:640px){
+    .main{padding:20px 15px 30px}
+    .topline{margin-bottom:28px}
+    .crumb span:last-child{display:none}
+    .section-head h1{font-size:36px;letter-spacing:-1.2px}
+    .intro{grid-template-columns:1fr;gap:12px;padding:15px 0}
+    .q{padding:18px 15px}
+    .q .opts{margin-left:0}
+    .why,.q-note{margin-left:0}
+    .opt{padding:10px 11px}
+    .sec-actions{align-items:stretch;flex-direction:column}
+    .actions-group{width:100%}
+    .actions-group .btn{flex:1}
+    .sec-progress{text-align:center;order:2}
+    .brief{font-size:10px;padding:13px;max-height:360px}
+    .brief-bar{align-items:flex-start;flex-direction:column}
+    .fingerprint{grid-template-columns:1fr 1fr}
+  }
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto}
+    *,*::before,*::after{animation:none!important;transition:none!important}
+  }
+  @media print{
+    body{background:#fff;color:#111}
+    .bg-grid,.rail,.topline,.main-foot,.result-actions,.brief-actions,.warning,#toast,.results-head,.fingerprint{display:none!important}
+    .app{display:block}
+    .main{max-width:none;padding:0}
+    .brief-shell{border:0;margin:0;background:#fff}
+    .brief-bar{border-bottom:1px solid #bbb;color:#333;background:#fff}
+    .brief{max-height:none;overflow:visible;color:#111;background:#fff;font-size:10px;padding:0}
+  }
+</style>
+</head>
+<body>
+<div class="bg-grid" aria-hidden="true"></div>
+<div class="app">
+  <aside class="rail">
+    <div class="brand">
+      <div class="mark" aria-hidden="true">✚</div>
+      <div>
+        <div class="brand-name">MICROCURE</div>
+        <div class="brand-sub">DESIGN INTERROGATION</div>
+      </div>
+    </div>
+    <svg class="ecg" viewBox="0 0 280 34" preserveAspectRatio="none" aria-hidden="true">
+      <polyline points="0,18 44,18 52,18 57,5 63,29 69,18 104,18 113,18 118,11 123,24 128,18 176,18 184,18 189,7 194,27 199,18 280,18"/>
+    </svg>
+    <div class="progress-card">
+      <div class="progress-top"><span>ANSWERS</span><strong id="progressCount">0 / 0</strong></div>
+      <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
+      <div class="save-line"><span class="pulse"></span><span id="saveStatus">Autosaves in this browser</span></div>
+    </div>
+    <nav class="section-nav" id="sectionNav" aria-label="Quiz sections"></nav>
+    <div class="rail-foot">
+      <button type="button" class="ghost-btn" id="briefNavBtn">Generate design brief →</button>
+      <button type="button" class="ghost-btn" id="resetBtn">Reset all answers</button>
+      <p>Answers stay in this browser. Nothing is uploaded.</p>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topline">
+      <div class="crumb">
+        <span id="crumbNum">SECTION 01 / 10</span>
+        <span class="dot" aria-hidden="true"></span>
+        <span>MicroCure // pre-production</span>
+      </div>
+      <div class="top-actions">
+        <button type="button" class="ghost-btn" id="briefTopBtn">View design brief</button>
+      </div>
+    </div>
+
+    <div id="view"></div>
+
+    <footer class="main-foot">
+      <span>82 decisions. One game.</span>
+      <span>Autosaved locally · exportable as Markdown</span>
+    </footer>
+  </main>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ============================================================
+   MICROCURE — DESIGN INTERROGATION
+   A self-contained design questionnaire.
+   ============================================================ */
+
+const SECTIONS = [
+  {
+    id: 'north',
+    num: '01',
+    title: 'North Star',
+    blurb: 'The reason the game exists, and the line it must not cross.',
+    qs: [
+      {
+        id: 'fullgame',
+        q: 'What does “full-fledged” mean to you?',
+        why: 'This decides scope, engine, content volume, and what “done” means. Pick the outcome, not the genre.',
+        o: [
+          [`Premium PC indie game`, `A paid Steam release: 8–12 hour campaign, controller support, achievements, a store page.`],
+          [`Replayable roguelite`, `Short runs, deep builds, endless mode, score chasing. Content is reused, not authored once.`],
+          [`Story-driven campaign`, `Authored cases, characters and set pieces. Less randomness, more handcrafted moments.`],
+          [`Shareable browser game`, `Instant play, free, link-driven. Smaller scope per session and no install.`],
+          [`Commercial live game`, `Seasons, updates, monetization and online operations. The largest production burden.`]
+        ]
+      },
+      {
+        id: 'fantasy',
+        q: 'Which power fantasy should the player live?',
+        why: 'The fantasy sets the camera, the pacing, the enemy density and the tone of every line of copy.',
+        o: [
+          [`Elite nano-surgeon`, `Skill, precision, calm under pressure. The fantasy is competence, not carnage.`],
+          [`One-nano-army`, `A power fantasy: hordes, escalating weapons, visible destruction and big numbers.`],
+          [`Immune-system commander`, `Command cells, position allies, and win with strategy more than reflexes.`],
+          [`Reluctant operator`, `An ordinary person inside an impossible body. Vulnerability, dread and survival.`],
+          [`Mad scientist`, `Experimentation, mutations, morally grey tools and outcomes that surprise you.`]
+        ]
+      },
+      {
+        id: 'emotion',
+        q: 'What should players feel most often?',
+        why: 'The dominant emotion is the tuning target for sound, effects, difficulty and level pacing.',
+        o: [
+          [`Precision under panic`, `Delicate aiming while the body fails around you. Tension through responsibility.`],
+          [`Tactical control`, `Read the room, plan the route, execute cleanly. Mastery through understanding.`],
+          [`Power and release`, `Build a monstrous loadout and shred the infection. Catharsis through escalation.`],
+          [`Dread and awe`, `The body is vast, wrong and alive. Horror through scale and sound.`],
+          [`Wonder and discovery`, `Learn how each organ works, then exploit it. Curiosity as the reward.`]
+        ]
+      },
+      {
+        id: 'patient',
+        q: 'What is the patient to the player?',
+        why: 'This is the moral center of the game. It determines whether the case file is a level select or a character.',
+        o: [
+          [`A person to save`, `Named, written, with outcomes that matter beyond a score screen.`],
+          [`A puzzle to optimize`, `Systems-first. The patient is a set of constraints and a grade at the end.`],
+          [`A resource to spend`, `Risk the host for power. Efficient, morally expensive, and mechanically tense.`],
+          [`A mystery to uncover`, `The disease is a clue. The case is a story you reconstruct from evidence.`],
+          [`An audience`, `The patient watches, comments and reacts. The relationship is the point.`]
+        ]
+      },
+      {
+        id: 'tone',
+        q: 'What is the tone?',
+        why: 'Tone controls writing, color, music and how seriously the game asks to be taken.',
+        o: [
+          [`Grounded medical thriller`, `Plausible science, serious stakes, dry humor to let the air out.`],
+          [`Pulpy sci-fi horror`, `Body horror, dramatic villains, big swings and bigger set pieces.`],
+          [`Hopeful heroics`, `Earned victories, warm characters and a clear good worth fighting for.`],
+          [`Dark comedy`, `Absurd biology, sharp jokes, gore with a wink.`],
+          [`Clinical realism`, `Restrained, procedural, documentary-like. The horror is in the normal.`]
+        ]
+      },
+      {
+        id: 'antigoal',
+        q: 'What must MicroCure never become?',
+        why: 'A clear anti-goal is more useful than a feature list. It prevents the project from drifting into a generic product.',
+        o: [
+          [`Generic twin-stick shooter`, `No identity beyond shooting bugs in a dark room.`],
+          [`Gore spectacle`, `Shock in place of meaning; the body as decoration.`],
+          [`Grind-heavy live service`, `Daily chores, monetized friction, and content designed to waste time.`],
+          [`Slow walking sim`, `Atmosphere without agency; a museum tour of an organ.`],
+          [`Mobile idle game`, `Numbers going up with no hands-on skill or tension.`]
+        ]
+      },
+      {
+        id: 'signature',
+        q: 'Which sentence should define the game?',
+        why: 'The signature sentence is what you put on the store page, in the pitch, and at the top of every design document.',
+        o: [
+          [`Every shot costs the patient.`, `Collateral damage, precision and the Host Integrity tension.`],
+          [`The body is the level.`, `Organ mechanics, spatial identity and environmental storytelling.`],
+          [`Build the cure, break the infection.`, `Buildcraft, synergies and the pleasure of a plan coming together.`],
+          [`A doctor’s choices, at cellular scale.`, `Moral weight, character and narrative consequence.`],
+          [`Survive the immune war.`, `Combat, escalation and the fantasy of holding the line.`]
+        ]
+      }
+    ]
+  },
+  {
+    id: 'structure',
+    num: '02',
+    title: 'Genre & Structure',
+    blurb: 'The shape of a session, the shape of a campaign, and the camera you will stare at for years.',
+    qs: [
+      {
+        id: 'genre',
+        q: 'What is the primary genre?',
+        why: 'Genre is a promise to the player. It tells them what skills matter and what a session will feel like.',
+        o: [
+          [`Twin-stick action roguelite`, `The current prototype’s shape: move, aim, dodge, draft upgrades, repeat.`],
+          [`Action RPG`, `Loot, character builds, quests and longer arcs. More systems, slower pacing.`],
+          [`Tactical squad`, `Pause-and-plan, positioning and synergies between units.`],
+          [`Survival horror`, `Scarcity, vulnerability and careful resource use. Fewer, more dangerous enemies.`],
+          [`Metroidvania`, `An interconnected body, abilities that open routes, and hand-authored exploration.`],
+          [`Wave-based arena`, `Pure combat, escalating waves, short sessions and leaderboard pressure.`]
+        ]
+      },
+      {
+        id: 'run',
+        q: 'How is a run structured?',
+        why: 'This determines how often the player returns to the hub and how long a single commitment lasts.',
+        o: [
+          [`Linear case`, `One patient, start to finish. Fail and restart the case.`],
+          [`Roguelite organ chain`, `A run threads through 3–5 organs with upgrades between them.`],
+          [`Hub-based missions`, `Pick a case, return to the hospital, repeat. Progress is persistent.`],
+          [`One open body`, `A single interconnected patient explored over many hours.`],
+          [`Endless escalating run`, `No fixed end; survive as long as possible and chase a score.`]
+        ]
+      },
+      {
+        id: 'camera',
+        q: 'What camera do you want?',
+        why: 'Camera is the single biggest technical and artistic commitment. It changes the entire content pipeline.',
+        o: [
+          [`Top-down 2D`, `Readable, proven for twin-stick, cheapest to animate and iterate.`],
+          [`Isometric 2.5D`, `More depth and spectacle, more art and occlusion work.`],
+          [`Side-view`, `Platforming and silhouette-driven action; a different game entirely.`],
+          [`First-person 3D`, `Immersion and scale, but expensive environments and motion-sickness risk.`],
+          [`Third-person 3D`, `Cinematic presence, large animation and camera budgets.`],
+          [`Fixed cinematic angles`, `Directed, theatrical framing; limited player spatial awareness.`]
+        ]
+      },
+      {
+        id: 'dimension',
+        q: 'What visual dimension fits the fantasy?',
+        why: '2D and 3D are different production realities. Decide before the first asset is made.',
+        o: [
+          [`2D pixel art`, `Retro readability, fast iteration, a large affordable asset pool.`],
+          [`2D hand-drawn / vector`, `Distinctive silhouettes and a premium illustrated feel.`],
+          [`2.5D`, `2D gameplay with layered lighting, parallax and depth. A strong middle path.`],
+          [`Stylized 3D`, `Depth, scale and cinematic cameras without photoreal costs.`],
+          [`Photoreal 3D`, `Maximum spectacle, maximum cost, maximum risk for a small team.`]
+        ]
+      },
+      {
+        id: 'session',
+        q: 'What is the ideal session length?',
+        why: 'Session length shapes save points, run length, difficulty spikes and how much content a player sees per hour.',
+        o: [
+          [`5–10 minutes`, `Arcade rhythm. Every decision is compressed; perfect for browser or mobile.`],
+          [`20–40 minutes`, `A full organ chain or one case. The natural roguelite session.`],
+          [`60–90 minutes`, `A multi-organ case with a beginning, middle and boss.`],
+          [`3+ hours`, `A long campaign sitting. Demands strong saves and recaps.`],
+          [`Open-ended`, `The player decides when to stop; the game never pressures a session length.`]
+        ]
+      },
+      {
+        id: 'fail',
+        q: 'What happens when the player dies?',
+        why: 'Failure is the shape of the learning loop. It decides whether the game is tense, forgiving, or punishing.',
+        o: [
+          [`Restart the run`, `Clean roguelite stakes. Every decision matters because everything can be lost.`],
+          [`Lose the organ, keep the run`, `A softer setback; the case continues but the patient pays for it.`],
+          [`Return to hub with a penalty`, `Persistent progress, lighter tension, more forgiving for story players.`],
+          [`Revive at a cost`, `Spend a resource or accept a complication. Keeps momentum without removing stakes.`],
+          [`No death; the patient worsens`, `The run continues but the outcome degrades. Failure becomes a story, not a wall.`]
+        ]
+      },
+      {
+        id: 'persistence',
+        q: 'How much persists between sessions?',
+        why: 'Persistence determines whether players feel a long-term relationship with the hospital and the cases.',
+        o: [
+          [`None`, `Every session starts fresh. Pure skill and short-session clarity.`],
+          [`Per-run only`, `Builds reset each run; the run itself is the arc.`],
+          [`Meta progression`, `Unlock weapons, research and hospital upgrades across runs.`],
+          [`Save anywhere`, `A continuous campaign the player can leave and resume at any moment.`],
+          [`New Game+`, `The first completion unlocks a harder, remixed campaign.`]
+        ]
+      },
+      {
+        id: 'structure',
+        q: 'How should content be assembled?',
+        why: 'This is a production decision as much as a design one. It controls replayability, authoring cost and testability.',
+        o: [
+          [`Handcrafted`, `Every arena and encounter is authored. Highest quality ceiling, highest cost.`],
+          [`Procedural`, `Systems generate the levels. High replayability, weaker authored moments.`],
+          [`Hybrid`, `Authored rooms and set pieces, randomized order and modifiers.`],
+          [`Live seasonal`, `Content rotates over time. Requires ongoing operations and a content pipeline.`]
+        ]
+      },
+      {
+        id: 'difficulty',
+        q: 'How should difficulty work?',
+        why: 'Difficulty is an accessibility decision, a marketing promise, and a tuning budget all at once.',
+        o: [
+          [`Curated difficulty curve`, `Designed spikes and rests; the intended experience.`],
+          [`Adaptive difficulty`, `The game responds to player performance. Hard to tune, easy to make invisible.`],
+          [`Player-controlled modifiers`, `Sliders and toggles for damage, integrity, speed and aim assist.`],
+          [`Brutal fixed difficulty`, `One uncompromising mode. Strong identity, smaller audience.`],
+          [`Story mode first`, `Narrative accessibility is the priority; combat is secondary.`]
+        ]
+      }
+    ]
+  },
+  {
+    id: 'loop',
+    num: '03',
+    title: 'Core Loop',
+    blurb: 'What the player does, again and again, for the next twenty hours of their life.',
+    qs: [
+      {
+        id: 'moment',
+        q: 'What does moment-to-moment play feel like?',
+        why: 'The verb at the center of the game is the thing you must make feel excellent before adding content.',
+        o: [
+          [`Shoot and dodge`, `Aim, position, dash through patterns. Reflex-driven and immediately readable.`],
+          [`Stealth and positioning`, `Avoid, flank, strike. Slower and more tense; requires strong enemy vision design.`],
+          [`Resource management`, `Manage ammo, oxygen, integrity and cooldowns. The mind is the weapon.`],
+          [`Puzzle-solving`, `Read the organ, find the interaction, execute the solution.`],
+          [`Platforming`, `Traverse tissue and fluids with precision. Movement is the challenge.`],
+          [`Melee`, `Close-range risk, parries and crowd control. Intimate and dangerous.`]
+        ]
+      },
+      {
+        id: 'objective',
+        q: 'What is the primary objective inside an organ?',
+        why: 'The objective is the spine of every arena. It tells the player what “done” looks like.',
+        o: [
+          [`Clear all infection`, `Straightforward, satisfying, easy to read. Risk of repetition.`],
+          [`Destroy infection nodes`, `Targets create routing decisions and force the player to commit.`],
+          [`Reach the organ core`, `Traversal-first. The fight is the journey, not the room.`],
+          [`Escort an antibody`, `Protect a moving objective. Creates constant pressure and emergent stories.`],
+          [`Survive a timer`, `A countdown turns every mistake into lost time. Simple and effective.`],
+          [`Extract samples`, `Grab-and-run objectives that reward risk and route planning.`]
+        ]
+      },
+      {
+        id: 'pressure',
+        q: 'What creates the pressure?',
+        why: 'Pressure is what turns a shooting gallery into a game. Choose the clock the player is always racing.',
+        o: [
+          [`Enemy waves`, `The threat is external and immediate. Pure combat pressure.`],
+          [`Host integrity`, `The patient is the clock. Every action has a cost beyond your own health.`],
+          [`Time / par`, `The mission is a performance. Speed is the skill being measured.`],
+          [`Limited ammo`, `Every shot is a decision. Forces weapon swapping and precision.`],
+          [`Spreading infection`, `Ignore a problem and it grows. Prioritization is the core skill.`],
+          [`Environmental collapse`, `The arena itself is failing. Movement and routing become urgent.`]
+        ]
+      },
+      {
+        id: 'between',
+        q: 'What happens between organs?',
+        why: 'The breather is where pacing lives. It is also where the player feels the shape of a run.',
+        o: [
+          [`Draft a bio-adaptation`, `Choose 1 of 3 upgrades. Fast, replayable, build-defining.`],
+          [`Visit a field shop`, `Spend currency, manage resources, make build decisions with a budget.`],
+          [`Story beat`, `Characters, consequences and a reason to care about the next organ.`],
+          [`Short rest / heal`, `Recover, breathe, and prepare. Low tension, high clarity.`],
+          [`Choose next route`, `Branching paths with different risks and rewards.`]
+        ]
+      },
+      {
+        id: 'signatureMechanic',
+        q: 'Which mechanic should be the signature?',
+        why: 'The signature mechanic is the one thing every review will mention. It must interact with everything else.',
+        o: [
+          [`Host Integrity`, `A second health bar for the patient. Collateral damage, precision and moral weight.`],
+          [`Infection ecosystem`, `The disease spreads, evolves and reacts. A living system to manage.`],
+          [`Antibody crafting`, `Collect samples and assemble a cure. Buildcraft as the core verb.`],
+          [`Organ powers`, `Each organ grants a temporary, dramatic ability that changes how you play.`],
+          [`Time dilation`, `Slow the body, aim precisely, pay for it elsewhere.`],
+          [`Friendly fire / collateral`, `Your weapons always hurt the host. Every explosion is a trade-off.`]
+        ]
+      },
+      {
+        id: 'downtime',
+        q: 'How much downtime should there be?',
+        why: 'Downtime controls intensity and pacing. Too little becomes exhausting; too much becomes a menu simulator.',
+        o: [
+          [`Constant action`, `No breaks. Arcade energy, short sessions, high fatigue.`],
+          [`Short breathers`, `A beat between fights. The default for modern action games.`],
+          [`Tactical pause`, `Stop time to plan, then execute. Strategy-forward.`],
+          [`Hub-heavy`, `A large portion of the game is preparation, conversation and upgrades.`]
+        ]
+      },
+      {
+        id: 'variety',
+        q: 'What stops the loop from getting repetitive?',
+        why: 'Variety is a content budget question. The answer must be cheap enough to produce repeatedly.',
+        o: [
+          [`Unique set pieces`, `Memorable authored moments. Expensive but defining.`],
+          [`Random modifiers`, `Mutators change the rules of a run. High replayability, low authoring cost.`],
+          [`Puzzles`, `New interactions and logic. Cheap to prototype, hard to make consistently good.`],
+          [`Story events`, `Choices, characters and consequences. Requires writing and branching.`],
+          [`Boss rush`, `Escalating tests of mastery. Pure combat, high skill ceiling.`]
+        ]
+      },
+      {
+        id: 'failforward',
+        q: 'How does failure move the story forward?',
+        why: 'Fail-forward design keeps players playing after a bad run and makes loss feel like content, not wasted time.',
+        o: [
+          [`Partial rewards`, `You always earn something; the run was not wasted.`],
+          [`Scars / complications`, `Failure leaves a mark on the patient or the doctor.`],
+          [`Patient persists`, `The same patient remains, changed by what happened.`],
+          [`Retry from organ`, `A softer checkpoint; the case continues without a full restart.`],
+          [`Permadeath`, `Failure is final. High tension, niche audience, expensive content.`]
+        ]
+      }
+    ]
+  },
+  {
+    id: 'combat',
+    num: '04',
+    title: 'Combat & Feel',
+    blurb: 'The two hundred milliseconds that decide whether the game feels good in the hand.',
+    qs: [
+      {
+        id: 'aim',
+        q: 'How does aiming work?',
+        why: 'Aiming is the core input. It determines platform, difficulty, enemy design and accessibility.',
+        o: [
+          [`Mouse twin-stick`, `Precise, fast, ideal for PC. Requires a second input scheme for gamepad.`],
+          [`Right-stick twin-stick`, `Controller-native and symmetrical. Aim assist becomes a design requirement.`],
+          [`Lock-on`, `Focus on movement and ability timing. Less precise, more accessible.`],
+          [`Auto-aim`, `The game aims for you; positioning and cooldowns matter most.`],
+          [`Directional arcade`, `Eight-way or fixed-angle shooting. Retro clarity, limited expression.`]
+        ]
+      },
+      {
+        id: 'movement',
+        q: 'What makes movement feel good?',
+        why: 'Movement is the verb players perform most. It should be fun before any enemy appears.',
+        o: [
+          [`Dash / blink`, `A short burst with i-frames. Proven, readable, easy to tune.`],
+          [`Grapple`, `Anchor and swing through tissue. Expressive, expensive to build.`],
+          [`Cover-based`, `Slow, tactical movement between safe zones.`],
+          [`Zero gravity`, `Drift and momentum in fluid. Distinctive, potentially disorienting.`],
+          [`Momentum`, `Build speed and keep it. High skill ceiling, strong movement identity.`],
+          [`Teleport`, `Instant repositioning with a cooldown. Puzzle-like and precise.`]
+        ]
+      },
+      {
+        id: 'weapons',
+        q: 'What is the weapon philosophy?',
+        why: 'Weapon design is the primary source of build expression and the main content treadmill.',
+        o: [
+          [`Clear archetypes`, `Shotgun, rifle, sniper, SMG. Instantly readable and easy to balance.`],
+          [`Modular build-your-gun`, `Chassis plus modules. Deep buildcraft, more UI and balance work.`],
+          [`Abilities-first`, `Weapons are support; powers are the show.`],
+          [`Exotic science`, `Each weapon is a strange biological tool, not a gun with a skin.`],
+          [`Realistic`, `Grounded medical instruments with plausible effects.`]
+        ]
+      },
+      {
+        id: 'abilities',
+        q: 'What does the ability kit look like?',
+        why: 'The ability kit defines the skill ceiling and the moment-to-moment decision space.',
+        o: [
+          [`Dash / shield / grenade / stabilize`, `Four clear verbs, each with a distinct job. Easy to learn, room to master.`],
+          [`Four equippable powers`, `Player choice before the run; builds define the kit.`],
+          [`Class kit`, `Pick a surgeon archetype with a fixed identity.`],
+          [`Card deck`, `Draw and play abilities. Deckbuilder depth, pacing risk.`],
+          [`No abilities`, `Weapons and movement only. Pure and readable.`]
+        ]
+      },
+      {
+        id: 'enemies',
+        q: 'What kind of enemies should dominate?',
+        why: 'Enemy design is how the player learns the rules of an organ. It should teach, not just fill space.',
+        o: [
+          [`Swarms`, `Many weak enemies. Satisfying weapons, crowd-control focus.`],
+          [`Elite duels`, `Few dangerous enemies with patterns. Readable, tense, memorable.`],
+          [`Positional hazards`, `Enemies that reshape the arena. Forces movement and routing.`],
+          [`Immune factions`, `Enemies that resist specific tools. Encourages loadout adaptation.`],
+          [`Psychological`, `Enemies that deceive, mimic or frighten. Tone-forward and risky.`],
+          [`Organ bosses`, `The biome itself becomes the antagonist.`]
+        ]
+      },
+      {
+        id: 'difficultyFeel',
+        q: 'How hard should the game feel?',
+        why: 'Perceived difficulty is a promise. A game that looks chaotic but is fair feels great; one that looks fair but is random feels cheap.',
+        o: [
+          [`Tough but fair`, `Failure teaches. Damage is readable and avoidable.`],
+          [`Power fantasy`, `The player is strong and the game knows it.`],
+          [`Brutal`, `High punishment, high mastery, small audience.`],
+          [`Adaptive`, `The game meets the player where they are.`],
+          [`Accessibility-first`, `Options are the default; the baseline is welcoming.`]
+        ]
+      },
+      {
+        id: 'healing',
+        q: 'How does healing work?',
+        why: 'Healing controls risk. Generous healing makes fights disposable; scarce healing makes every room a story.',
+        o: [
+          [`Pickups`, `Enemies drop recovery. Simple, readable, can trivialize fights.`],
+          [`Lifesteal`, `Aggression heals. Rewards confidence and punishes passivity.`],
+          [`Limited medkits`, `A resource the player chooses when to spend.`],
+          [`Between organs only`, `Rooms are commitments; the run has a clear recovery rhythm.`],
+          [`No healing`, `Every hit is permanent for the run. Maximum tension, niche appeal.`]
+        ]
+      },
+      {
+        id: 'ammo',
+        q: 'How should ammo work?',
+        why: 'Ammo is a pacing tool. It decides how often the player swaps weapons and how much they think about each shot.',
+        o: [
+          [`Scarce`, `Every shot matters. Encourages precision and weapon swapping.`],
+          [`Plentiful`, `Focus on positioning and ability use. Fewer frustrating moments.`],
+          [`Cooldowns`, `No ammo, only timing. Clean, but can feel like waiting.`],
+          [`Heat management`, `Sustained fire builds heat. Creates rhythm and risk.`],
+          [`Reload rhythm`, `Magazines and reloads are part of the dance.`]
+        ]
+      },
+      {
+        id: 'feedback',
+        q: 'What is the primary hit feedback?',
+        why: 'Feedback is how the player knows they connected. It is the difference between a toy and a weapon.',
+        o: [
+          [`Damage numbers`, `Clear, quantifiable, great for buildcraft. Can clutter the screen.`],
+          [`Hitstop and sparks`, `Physical impact and a brief freeze. Makes hits feel heavy.`],
+          [`Gore`, `Visceral body horror. Strong identity, narrower audience.`],
+          [`Audio`, `A sharp, satisfying sound layer. Cheap, powerful, universal.`],
+          [`Haptics`, `Controller feedback. Great on console, absent on PC.`]
+        ]
+      },
+      {
+        id: 'signatureWeapon',
+        q: 'Which weapon defines the fantasy?',
+        why: 'The signature weapon appears in the key art, the tutorial and the first thirty seconds of the demo.',
+        o: [
+          [`Bio-Volt Rifle`, `A chargeable precision rifle. Skill shot, clean identity.`],
+          [`Plasma Shotgun`, `Close-range burst. Aggressive, risky, satisfying.`],
+          [`Neural Sniper`, `Piercing, deliberate, high-damage. Rewards patience.`],
+          [`Photon Beam`, `Sustained damage, heat management, a continuous light show.`],
+          [`Antibody Swarm`, `Homing projectiles that seek infection. Smart, biological, unusual.`],
+          [`Nano Scalpel`, `Melee precision with huge risk. Unforgettable if it works.`]
+        ]
+      }
+    ]
+  },
+  {
+    id: 'builds',
+    num: '05',
+    title: 'Builds & Progression',
+    blurb: 'Why the player presses “one more run” — and what they keep when the run ends.',
+    qs: [
+      {
+        id: 'buildDepth',
+        q: 'How deep should buildcraft go?',
+        why: 'Build depth is the main source of replayability, but every synergy multiplies balance and UI work.',
+        o: [
+          [`Light`, `A few readable upgrades. Mastery comes from execution, not spreadsheets.`],
+          [`Moderate`, `Meaningful choices with limited stacking. The sweet spot for most action games.`],
+          [`Deep synergies`, `Builds are the game. Many combinations, many failure states, heavy balance work.`],
+          [`Deckbuilder`, `Cards, draw, discard and combos. Strong identity, UI-heavy and pacing-sensitive.`],
+          [`Class-locked`, `Each surgeon has a fixed kit. Clear identities, less mixing.`]
+        ]
+      },
+      {
+        id: 'draft',
+        q: 'How are mid-run upgrades chosen?',
+        why: 'The draft is the most repeated decision in a roguelite. It must be fast, legible and full of tension.',
+        o: [
+          [`Random 3`, `Choose 1 of 3. Fast and dramatic, but can deny the build the player wanted.`],
+          [`Draft from a pool`, `Players and the game pick from a shared pool. More strategy and denial.`],
+          [`Shop`, `Spend currency, plan purchases, compare. Less randomness, more downtime.`],
+          [`Skill tree`, `Persistent per-run progression. Predictable, lower variance.`],
+          [`Mutations`, `Body-horror changes with tradeoffs. Thematic and memorable, complex to explain.`]
+        ]
+      },
+      {
+        id: 'meta',
+        q: 'What does meta progression unlock?',
+        why: 'Meta progression is the long-term hook. It should add options and identity, not just raw power.',
+        o: [
+          [`Weapons and tech`, `New tools to experiment with. Horizontal progression, lower power creep.`],
+          [`Hospital base`, `Upgrade rooms and staff. A management layer between missions.`],
+          [`Character skills`, `Permanent stats and abilities. Can trivialize the game if uncapped.`],
+          [`Cosmetics and codex`, `Expression, collection and lore. No power creep.`],
+          [`None`, `Pure skill and knowledge. Cleanest competitive balance.`]
+        ]
+      },
+      {
+        id: 'curve',
+        q: 'What is the power curve within a run?',
+        why: 'The curve decides whether a run feels like a climb, a snowball, or a series of trades.',
+        o: [
+          [`Flat`, `Power stays stable; skill and positioning decide outcomes.`],
+          [`Exponential`, `Late runs become chaotic power fantasies. Fun, hard to balance.`],
+          [`Capped`, `Power rises then plateaus. Keeps tension and makes bosses fair.`],
+          [`Sidegrades`, `New options instead of bigger numbers. The most design-intensive path.`]
+        ]
+      },
+      {
+        id: 'rng',
+        q: 'How much randomness should the game have?',
+        why: 'Randomness creates stories but erodes fairness. The right amount depends on session length and competitive intent.',
+        o: [
+          [`Heavy roguelite`, `Every run is a different hand. High replay, occasional unfair deaths.`],
+          [`Controlled`, `Randomness with strong guardrails and pity systems.`],
+          [`Deterministic`, `Same tools, same outcomes. Puzzle-like mastery.`],
+          [`Seeded`, `Reproducible runs for leaderboards, speedruns and sharing.`]
+        ]
+      },
+      {
+        id: 'loadout',
+        q: 'How does the player choose a loadout?',
+        why: 'Loadout is the pre-run promise. It tells the player what kind of problem they are about to solve.',
+        o: [
+          [`Fixed slots`, `Three weapons, all available. Readable and easy to balance.`],
+          [`One weapon`, `Deep mastery of a single tool. Strong identity, limited expression.`],
+          [`Classes`, `Surgeon archetypes with distinct kits. Clear fantasy, more content.`],
+          [`Draft`, `Pick weapons during the run. Adaptive and dramatic.`],
+          [`Adaptive`, `Swap freely; the loadout is a toolbox. Encourages experimentation.`]
+        ]
+      },
+      {
+        id: 'respec',
+        q: 'How costly is changing a build?',
+        why: 'Respec cost sets the emotional weight of every choice. Free respecs invite experimentation; costly ones invite commitment.',
+        o: [
+          [`Free`, `Experiment constantly. Low anxiety, less identity.`],
+          [`Costly`, `A real decision, but recoverable.`],
+          [`Irreversible`, `Commitment and consequence. Can trap a player in a bad run.`],
+          [`NG+ only`, `Builds are locked for a campaign, then remixed.`]
+        ]
+      },
+      {
+        id: 'endgame',
+        q: 'What is the endgame?',
+        why: 'The endgame is what keeps the most engaged players around after the credits and drives word of mouth.',
+        o: [
+          [`New Game+`, `A remixed, harder campaign. Reuses content efficiently.`],
+          [`Daily runs`, `One shared seed per day, leaderboard-driven. Community ritual.`],
+          [`Endless`, `Escalating survival mode. Cheap to build, high mastery ceiling.`],
+          [`Challenge modifiers`, `Self-imposed difficulty and score chasing.`],
+          [`PvP`, `A separate competitive mode. A second game’s worth of balance and netcode.`]
+        ]
+      }
+    ]
+  },
+  {
+    id: 'world',
+    num: '06',
+    title: 'World & Content',
+    blurb: 'How much game there is, and how it is assembled without drowning the team.',
+    qs: [
+      {
+        id: 'organs',
+        q: 'How many organ biomes should launch?',
+        why: 'Each organ is a mechanical identity, an art set, a hazard set and an enemy roster. This is the largest content multiplier.',
+        o: [
+          [`4`, `Heart, lungs, brain, stomach. Focused, deep and achievable.`],
+          [`6`, `Add liver and kidneys, or skin. More variety, more production.`],
+          [`8+`, `A full biology tour. Ambitious for a small team.`],
+          [`One evolving body`, `A single organ that transforms over the campaign. Intimate and cheaper.`]
+        ]
+      },
+      {
+        id: 'level',
+        q: 'How are levels built?',
+        why: 'Level construction controls replayability, authoring cost and how memorable the spaces are.',
+        o: [
+          [`Handcrafted arenas`, `Authored rooms and encounters. Highest quality ceiling, highest cost.`],
+          [`Procedural`, `Generated layouts. High replay, weaker authored moments.`],
+          [`Metroidvania`, `An interconnected body with shortcuts and ability gates.`],
+          [`Open body`, `Systemic navigation across a large organism. Ambitious and risky.`]
+        ]
+      },
+      {
+        id: 'cases',
+        q: 'How many patient cases should launch?',
+        why: 'Cases are the narrative unit. Each needs a condition, a boss, a briefing and a reason to exist.',
+        o: [
+          [`6`, `A tight campaign where every case is a distinct problem.`],
+          [`10`, `A full season of cases with room for side stories.`],
+          [`20+`, `Short, punchy cases. Requires a strong content pipeline.`],
+          [`Endless`, `No fixed count; cases are generated from conditions and modifiers.`]
+        ]
+      },
+      {
+        id: 'bosses',
+        q: 'What is the boss philosophy?',
+        why: 'Bosses are the memory anchors of a campaign. They need a mechanical idea, not just a health bar.',
+        o: [
+          [`One per organ`, `Four bosses, each a final exam for a biome.`],
+          [`One per case`, `Ten narrative climaxes. More spectacle, more writing.`],
+          [`Recurring rival`, `One antagonist who evolves and returns. Efficient and memorable.`],
+          [`Multi-phase spectacle`, `Huge set pieces with phase changes. Marketing-friendly, expensive.`]
+        ]
+      },
+      {
+        id: 'density',
+        q: 'What is the content density model?',
+        why: 'Density is the difference between a game players finish and a game they live in.',
+        o: [
+          [`Short and repeatable`, `Many 20–40 minute runs. Replayability over novelty.`],
+          [`Long and unique`, `Fewer, richer 60–90 minute cases. Lower replay.`],
+          [`Seasonal`, `Rotating content. Requires live operations.`],
+          [`Mod tools`, `Community-made content. Requires platform investment.`]
+        ]
+      },
+      {
+        id: 'framing',
+        q: 'How is the world framed?',
+        why: 'The frame is where the player lives between missions. It carries tone, progression and the feeling of a place.',
+        o: [
+          [`Hospital hub`, `Nexus Medical Institute: wards, staff, case board. Strong identity.`],
+          [`Traveling clinic`, `A mobile unit moving between outbreak zones. Episodic and varied.`],
+          [`Military program`, `A black-site program with command, secrecy and stakes.`],
+          [`Patient’s memories`, `The body as a mindscape. Surreal, narrative-forward.`],
+          [`Anthology`, `Loose connections and varied tones. Flexible, harder to bind.`]
+        ]
+      },
+      {
+        id: 'environmental',
+        q: 'How is story delivered inside the body?',
+        why: 'In-mission storytelling is the cheapest way to make a level feel authored rather than assembled.',
+        o: [
+          [`Patient files`, `Reading between missions. Cheap, deep, optional.`],
+          [`In-organ clues`, `Discover evidence during play. Rewards curiosity.`],
+          [`Dialogue`, `Characters talk during the mission. Requires voice or strong writing.`],
+          [`Audio logs`, `Found recordings. Atmospheric, easy to overuse.`],
+          [`None`, `Gameplay only. Clarity and focus.`]
+        ]
+      },
+      {
+        id: 'organIdentity',
+        q: 'How different should each organ feel?',
+        why: 'Organ identity is the game’s level-design thesis. If it is only a palette swap, the fantasy collapses.',
+        o: [
+          [`Unique mechanics`, `Each organ changes a core rule. The strongest and most expensive option.`],
+          [`Enemy rosters`, `New enemies and compositions per organ. Cheaper, still distinct.`],
+          [`Hazards`, `Environmental variety only. Low cost, modest impact.`],
+          [`Visual only`, `A reskin. Cheapest, weakest, fastest to feel repetitive.`],
+          [`Story`, `Narrative differences only. Works for a story-first game.`]
+        ]
+      }
+    ]
+  },
+  {
+    id: 'story',
+    num: '07',
+    title: 'Story & Tone',
+    blurb: 'Who is under the microscope, why we care, and how much of the game is spent talking.',
+    qs: [
+      {
+        id: 'narrative',
+        q: 'How much narrative weight?',
+        why: 'Story is not free. Every scene, line and branch competes with combat content for the same budget.',
+        o: [
+          [`Light`, `A strong premise and some barks. The action carries the experience.`],
+          [`Character-driven`, `Patient and doctor arcs. The reason to keep playing is the people.`],
+          [`Mystery`, `Clues, conspiracy and reveals. Players keep playing to find out.`],
+          [`Lore-heavy`, `Codex, history and factions. Rewards investment, risks exposition.`],
+          [`None`, `Pure combat. Clean and focused.`]
+        ]
+      },
+      {
+        id: 'protagonist',
+        q: 'Who is the player character?',
+        why: 'The protagonist determines the voice of the game, the writing budget and how much the player projects onto the hero.',
+        o: [
+          [`Silent professional`, `The player projects; minimal writing and voice cost.`],
+          [`Voiced character`, `A defined personality and relationships. More expensive, more memorable.`],
+          [`Customizable`, `Name, look and background. Strong ownership, harder to write.`],
+          [`Team`, `An ensemble cast. More perspectives, more scenes.`],
+          [`Antihero`, `Morally compromised. Strong hook, risk of unlikeability.`]
+        ]
+      },
+      {
+        id: 'patientArc',
+        q: 'How are the patients connected?',
+        why: 'Connection turns a level select into a story. It also determines how much continuity the player must track.',
+        o: [
+          [`Case-of-the-week`, `Self-contained stories. Easy to jump in, weaker momentum.`],
+          [`Connected conspiracy`, `An overarching plot. Strong momentum, more writing.`],
+          [`One patient`, `The entire game is about saving one person. Intimate and focused.`],
+          [`Moral dilemmas`, `Choices with no clean answer. The story is the consequence.`],
+          [`Anthology`, `Separate stories with a framing device. Flexible and varied.`]
+        ]
+      },
+      {
+        id: 'villain',
+        q: 'Who or what is the antagonist?',
+        why: 'A villain gives the campaign a face. A force gives it a theme. Choose what the final boss should mean.',
+        o: [
+          [`Personified virus`, `A character with a will, maybe a voice. Strong and theatrical.`],
+          [`Corporation`, `Systemic greed and institutional failure. Timely, harder to punch.`],
+          [`Rogue AI`, `The program itself. Cold, scalable and eerie.`],
+          [`The doctor herself`, `Personal, tragic and intimate. A strong final choice.`],
+          [`No villain`, `Disease as the antagonist. Clinical, existential, restrained.`]
+        ]
+      },
+      {
+        id: 'ending',
+        q: 'What kind of ending should the game earn?',
+        why: 'The ending is the last thing players remember and the first thing they talk about.',
+        o: [
+          [`Triumphant`, `A clear, earned victory. Satisfying and marketable.`],
+          [`Bittersweet`, `The patient lives, but something is lost. Memorable.`],
+          [`Twist`, `Reframes the story. Risky, needs a strong setup.`],
+          [`Multiple`, `Player choices matter. Expensive to build and test.`],
+          [`Endless`, `No ending; the game continues. Fits a live or score-chasing game.`]
+        ]
+      },
+      {
+        id: 'delivery',
+        q: 'How is the story delivered?',
+        why: 'Delivery is a budget decision disguised as a creative one. Pick the format the team can actually sustain.',
+        o: [
+          [`Cutscenes`, `Cinematic and expensive. Strongest emotional peaks.`],
+          [`Comic panels`, `Stylized, affordable and distinctive.`],
+          [`Radio chatter`, `In-mission dialogue. Cheap, keeps the player in control.`],
+          [`Environmental`, `Show, don’t tell. Requires strong art and level design.`],
+          [`VN-style`, `Portraits and text. Writing-heavy, low production cost.`],
+          [`Minimal`, `Just enough context. The action is the story.`]
+        ]
+      }
+    ]
+  },
+  {
+    id: 'art',
+    num: '08',
+    title: 'Art & Audio',
+    blurb: 'What it looks like from the inside — and what the player hears when the body fights back.',
+    qs: [
+      {
+        id: 'style',
+        q: 'What is the visual style?',
+        why: 'Style is identity and pipeline at once. It determines asset cost, readability and how fast an agent can iterate.',
+        o: [
+          [`Pixel art`, `Retro clarity, fast iteration and a large affordable asset pool.`],
+          [`Clean vector neon`, `Crisp silhouettes and a modern medical-sci-fi look. Cheap to animate.`],
+          [`Painted comic`, `Illustrated panels and textured organs. Distinctive, expensive.`],
+          [`Low-poly 3D`, `Depth and scale with a manageable asset budget.`],
+          [`Realistic`, `Maximum immersion, maximum cost and risk.`],
+          [`Abstract`, `Systems and motion over anatomy. Cheapest, most experimental.`]
+        ]
+      },
+      {
+        id: 'palette',
+        q: 'What is the color palette?',
+        why: 'Palette is the fastest way to make the game recognizable in a screenshot or a store page thumbnail.',
+        o: [
+          [`Bio-neon`, `Teal, magenta and deep black. High contrast, instantly game-like.`],
+          [`Clinical white + red`, `Sterile surfaces and blood. Restrained, tense, premium.`],
+          [`Monochrome + accent`, `Black and white with one warning color. Graphic and memorable.`],
+          [`Warm organic`, `Reds, ambers and bone. Visceral and bodily.`],
+          [`Psychedelic`, `Shifting hues and impossible biology. Bold, harder to read.`]
+        ]
+      },
+      {
+        id: 'readability',
+        q: 'What is the readability priority?',
+        why: 'In a game about aiming inside a busy body, readability is not a style choice — it is a gameplay requirement.',
+        o: [
+          [`Silhouettes`, `Enemies, hazards and pickups read instantly against any background.`],
+          [`Effects`, `Projectiles, hit sparks and telegraphs are the loudest layer.`],
+          [`Atmosphere`, `Mood and immersion come first; clarity is secondary.`],
+          [`Realism`, `Materials and lighting behave plausibly, even when it costs clarity.`]
+        ]
+      },
+      {
+        id: 'gore',
+        q: 'How much gore?',
+        why: 'The body is the setting. Gore level sets the tone and the age rating, and changes how the patient is framed.',
+        o: [
+          [`Stylized`, `Abstract fluids and bursts. Visceral without being explicit.`],
+          [`Clinical`, `Medical, restrained, documentary-like. The horror is implied.`],
+          [`Visceral`, `Explicit tissue damage and body horror. Strong identity, narrower audience.`],
+          [`None`, `No blood or dismemberment. Broader audience, less bodily.`]
+        ]
+      },
+      {
+        id: 'cameraFX',
+        q: 'How aggressive should camera and screen effects be?',
+        why: 'Screen effects are a accessibility issue and a game-feel tool. Budget them deliberately.',
+        o: [
+          [`Minimal`, `Clean and readable. Good for long sessions and accessibility.`],
+          [`Shake and flash`, `Punchy feedback. Requires a slider and a comfort option.`],
+          [`Chromatic / depth of field`, `Cinematic and immersive; can blur gameplay-critical information.`],
+          [`Cinematic`, `Heavy framing, slow motion and lens effects.`],
+          [`VR comfort`, `Every effect must pass a nausea and comfort review.`]
+        ]
+      },
+      {
+        id: 'music',
+        q: 'What is the music direction?',
+        why: 'Music is the emotional glue of a run. Adaptive systems are powerful but need a real implementation budget.',
+        o: [
+          [`Adaptive synth`, `Layers react to combat and host integrity. Strong fit for the premise.`],
+          [`Orchestral`, `Cinematic scale and emotion. Expensive to produce well.`],
+          [`Industrial`, `Percussive, mechanical and tense.`],
+          [`Ambient`, `Atmospheric and restrained. Great for horror, risky for action.`],
+          [`Licensed`, `Known tracks. Expensive and complex to clear.`]
+        ]
+      },
+      {
+        id: 'audio',
+        q: 'What is the audio identity?',
+        why: 'A single strong audio motif can do more for identity than a dozen generic sound effects.',
+        o: [
+          [`Heartbeat as metronome`, `The body sets the tempo. Ties directly to Host Integrity.`],
+          [`Wet foley`, `Squelches, fluids and tissue. Immediate and bodily.`],
+          [`80s synth`, `Retro-futurist and stylish. Familiar, needs differentiation.`],
+          [`Clinical hum`, `Machines, air and fluorescent light. Cold and unsettling.`],
+          [`Voice`, `The patient or the suit talks. Strong character, writing cost.`]
+        ]
+      },
+      {
+        id: 'ui',
+        q: 'What is the UI language?',
+        why: 'The UI is where the player spends their attention. It must match the fiction without hiding critical information.',
+        o: [
+          [`Diegetic medical`, `The HUD feels like surgical instrumentation. Immersive, harder to read.`],
+          [`Retro terminal`, `Monospace, scanlines, command lines. Cheap and distinctive.`],
+          [`Clean modern`, `Minimal, legible, accessible. Lets the art breathe.`],
+          [`Comic`, `Panels, labels and expressive type. Strong personality, can clutter.`],
+          [`Minimal`, `Almost no HUD. Maximum immersion, maximum readability risk.`]
+        ]
+      }
+    ]
+  },
+  {
+    id: 'tech',
+    num: '09',
+    title: 'Tech & Production',
+    blurb: 'The constraints that shape the dream — engine, platform, people, and money.',
+    qs: [
+      {
+        id: 'platform',
+        q: 'What is the lead platform?',
+        why: 'Platform decides input, storefront, performance budget, certification and how the game is discovered.',
+        o: [
+          [`PC / Steam`, `Best fit for a premium action game, early access and a long tail.`],
+          [`Web`, `Fastest to share and test. Weakest for premium packaging and controller-first play.`],
+          [`Mobile`, `Largest reach, hardest controls and monetization expectations.`],
+          [`Console`, `Premium living-room play. Requires certification and console dev access.`],
+          [`VR`, `Maximum immersion and physicality. A different design discipline.`],
+          [`All of the above`, `Maximum reach, maximum scope. Usually a later decision, not a launch one.`]
+        ]
+      },
+      {
+        id: 'input',
+        q: 'What input is first-class?',
+        why: 'Input is not a port detail. Twin-stick combat must be designed around the device the player actually holds.',
+        o: [
+          [`Keyboard and mouse`, `Precision aiming. Must still support gamepad if you ship on Steam.`],
+          [`Gamepad`, `Symmetrical twin-stick and comfortable movement. Aim assist required.`],
+          [`Touch`, `Direct manipulation. Needs a different combat and UI design.`],
+          [`Motion`, `Immersion and novelty. High design risk.`],
+          [`Hybrid`, `Support multiple schemes from day one. More testing and UI work.`]
+        ]
+      },
+      {
+        id: 'engine',
+        q: 'Which engine should the project use?',
+        why: 'For agent-driven development, text-based scenes and headless automation matter more than brand familiarity.',
+        o: [
+          [`Let the concept decide`, `Answer the rest first; the right engine may be obvious after the camera and platform answers.`],
+          [`Godot 4`, `Text scenes, GDScript/C#, free, fast, headless tests, excellent 2D.`],
+          [`Unity 6`, `C#, huge ecosystem, console path, strong 3D. Scene editing is less agent-friendly.`],
+          [`Unreal 5`, `Best-in-class 3D and cinematics. Blueprints are binary; heavy for a small 2D project.`],
+          [`Current web stack`, `Instant preview and sharing. You own the engine and the packaging work.`]
+        ]
+      },
+      {
+        id: 'techAmbition',
+        q: 'What is the technical ambition?',
+        why: 'Technical ambition is a cost multiplier. Pick the one that creates the most gameplay value per engineering hour.',
+        o: [
+          [`Crisp 2D`, `Fast, readable, achievable. Lets content and feel carry the game.`],
+          [`2.5D lighting and depth`, `More atmosphere and scale without full 3D costs.`],
+          [`Stylized 3D`, `Depth, cameras and scale. Requires a 3D art pipeline.`],
+          [`Destruction / fluid simulation`, `Spectacular systems, unpredictable performance and design.`],
+          [`VR`, `Presence and physicality. Requires a dedicated design and comfort budget.`]
+        ]
+      },
+      {
+        id: 'multiplayer',
+        q: 'What multiplayer scope, if any?',
+        why: 'Multiplayer is not a feature; it is an architecture, a test matrix and a community obligation.',
+        o: [
+          [`Solo only`, `Focus every system on one player. The recommended first release.`],
+          [`2-player co-op`, `Surgeon plus immune-system operator. Strong fantasy, real netcode cost.`],
+          [`4-player co-op`, `Chaos and roles. Much larger balance and networking scope.`],
+          [`PvP`, `A separate competitive design and community. Usually a second game.`],
+          [`Async`, `Ghosts, leaderboards and shared runs. Cheaper than real-time.`]
+        ]
+      },
+      {
+        id: 'online',
+        q: 'What online features are required?',
+        why: 'Online services add accounts, privacy, moderation and long-term maintenance. Keep the list short.',
+        o: [
+          [`Fully offline`, `No accounts, no servers, no live ops. Simplest and most durable.`],
+          [`Leaderboards`, `Score chasing and community competition. Modest backend work.`],
+          [`Cloud saves`, `Cross-device continuity and frictionless returns.`],
+          [`Crossplay`, `Shared multiplayer pools. Requires platform agreements and testing.`]
+        ]
+      },
+      {
+        id: 'modding',
+        q: 'Should the game support mods?',
+        why: 'Modding multiplies content but requires stable data formats, documentation, tooling and support.',
+        o: [
+          [`No modding`, `Simplest path. Focus on the authored game.`],
+          [`Data mods`, `Weapons, cases and upgrades as files. Cheap to support, high replay value.`],
+          [`Full SDK`, `Scripting, assets and tools. A second product to maintain.`],
+          [`Steam Workshop`, `Distribution and discovery built in. Platform-specific integration.`]
+        ]
+      },
+      {
+        id: 'team',
+        q: 'What is the team reality?',
+        why: 'The honest team size decides scope more than ambition does. Plan for the team you have, not the one you want.',
+        o: [
+          [`Solo + AI agents`, `Fast iteration, limited art/audio capacity. Scope must be ruthless.`],
+          [`2–3 people`, `Complementary skills, shared ownership, modest content budget.`],
+          [`5+ team`, `Parallel workstreams and more content, more coordination overhead.`],
+          [`Solo + outsourced art`, `Focused code/design with commissioned visuals. Requires art direction.`]
+        ]
+      },
+      {
+        id: 'budget',
+        q: 'What is the asset budget?',
+        why: 'Art and audio are where “small” game budgets quietly become large. Choose the production tier honestly.',
+        o: [
+          [`Placeholders and free assets`, `Prove the loop first. Replace later, or never.`],
+          [`Small`, `A focused asset pack, custom key art and a coherent UI.`],
+          [`Moderate`, `Commissioned enemies, environments, animation and audio.`],
+          [`AAA`, `Large art, animation, voice and audio teams. Different project scale.`]
+        ]
+      }
+    ]
+  },
+  {
+    id: 'scope',
+    num: '10',
+    title: 'Scope & Success',
+    blurb: 'What to build first, what to leave out, and what “finished” means to you.',
+    qs: [
+      {
+        id: 'milestone',
+        q: 'What is the next milestone?',
+        why: 'The next milestone should be the smallest thing that proves the game is worth making.',
+        o: [
+          [`Playable 10-minute slice`, `One complete loop, start to finish. The best next step.`],
+          [`Public demo`, `A polished slice for strangers to play and share.`],
+          [`Early access`, `Sell the loop early and build with a community.`],
+          [`1.0`, `The full commercial release. Do not start here.`],
+          [`Proof of concept`, `A rough test of one risky idea. Cheap and fast.`]
+        ]
+      },
+      {
+        id: 'slice',
+        q: 'What is in the vertical slice?',
+        why: 'The slice is the contract for the full game. If it is not fun, more content will not save it.',
+        o: [
+          [`1 patient, 1 organ`, `The smallest playable loop. Good for a feel test.`],
+          [`1 patient, 2 organs, 1 boss`, `Enough to prove escalation, upgrades and payoff. Recommended.`],
+          [`2 patients`, `Proves case variety but doubles the writing and art.`],
+          [`Endless arena`, `Proves combat and builds, not structure or story.`]
+        ]
+      },
+      {
+        id: 'bestInClass',
+        q: 'What must be best-in-class?',
+        why: 'You cannot be excellent at everything. Pick the two pillars that will earn the reviews and the wishlists.',
+        multi: 2,
+        o: [
+          [`Combat feel`, `The moment-to-moment action is the reason to play.`],
+          [`Art direction`, `The game is unmistakable in a screenshot.`],
+          [`Story`, `The characters and choices are what people remember.`],
+          [`Systems and buildcraft`, `The depth keeps players theorycrafting for months.`],
+          [`Audio`, `The sound design and music carry the tension.`],
+          [`Accessibility`, `The game is a model for who gets to play it.`]
+        ]
+      },
+      {
+        id: 'goodEnough',
+        q: 'What can be “good enough”?',
+        why: 'Naming what can be average is how a small team ships. Everything cannot be a pillar.',
+        multi: 2,
+        o: [
+          [`Art`, `Readable and coherent, not distinctive.`],
+          [`Story`, `Functional context, not a reason to play.`],
+          [`Audio`, `Clear feedback, no memorable score.`],
+          [`Meta progression`, `A light unlock tree, no deep management.`],
+          [`Enemy variety`, `A small roster used well, not a bestiary.`]
+        ]
+      },
+      {
+        id: 'success',
+        q: 'How will you know it worked?',
+        why: 'Success criteria keep the project honest. Pick one primary metric, not a wish list.',
+        o: [
+          [`Wishlists`, `The market is interested before launch.`],
+          [`Playtime`, `Players keep coming back after the first session.`],
+          [`Reviews`, `Critical reception and player sentiment.`],
+          [`Revenue`, `The game sustains the next project.`],
+          [`Portfolio`, `The work opens the next door, regardless of sales.`],
+          [`Personal pride`, `You would show it to anyone without apologizing.`]
+        ]
+      },
+      {
+        id: 'timeline',
+        q: 'What is the realistic timeline?',
+        why: 'A honest timeline prevents the most common indie failure: a beautiful project that never ships.',
+        o: [
+          [`1 month`, `A prototype or a very small demo. Not a full game.`],
+          [`3 months`, `A polished vertical slice or a small complete game.`],
+          [`6 months`, `A focused commercial release if scope is ruthless.`],
+          [`12+ months`, `A full-featured campaign with content and polish.`]
+        ]
+      },
+      {
+        id: 'release',
+        q: 'What is the release model?',
+        why: 'Release model shapes pricing, scope, community expectations and how much content must exist on day one.',
+        o: [
+          [`Free web`, `Maximum reach, minimum friction, weak monetization.`],
+          [`Paid Steam`, `Premium expectations, wishlists and a store page.`],
+          [`Early access`, `Revenue and feedback during development. Requires a playable core.`],
+          [`Demo-first`, `Prove the hook, build an audience, then launch.`],
+          [`Episodic`, `Cases release over time. Requires a reliable content cadence.`]
+        ]
+      },
+      {
+        id: 'restart',
+        q: 'What should happen to the current build?',
+        why: 'This is the practical fork in the road. Be honest about the cost of each path.',
+        o: [
+          [`Port the current code`, `Keep everything and move it to a new engine. Highest risk of inherited bugs.`],
+          [`Rewrite clean`, `Keep the design, rebuild the systems. Best long-term health.`],
+          [`Keep the JS stack`, `Fix and extend in place. Fastest, but the architecture fights you.`],
+          [`Hybrid`, `Keep the data, fiction and visual ideas; rebuild the runtime and UI. Recommended.`]
+        ]
+      },
+      {
+        id: 'firstAgentTask',
+        q: 'What should the agent do first?',
+        why: 'The first task should reduce uncertainty, not add surface area. Pick the smallest useful next move.',
+        o: [
+          [`Lock the design`, `Turn this brief into a one-page design document and a build order.`],
+          [`Build the vertical slice`, `Start the engine project and make the core loop playable.`],
+          [`Fix the prototype first`, `Make the current build run so you can feel the original loop.`],
+          [`Run an engine spike`, `Test the riskiest technical assumption in the chosen engine.`],
+          [`Create an art test`, `Prove the visual direction with one screenshot-quality scene.`]
+        ]
+      }
+    ]
+  }
+];
+
+const FINGERPRINT = [
+  ['GENRE', 'genre'],
+  ['CAMERA', 'camera'],
+  ['DIMENSION', 'dimension'],
+  ['ENGINE', 'engine'],
+  ['PLATFORM', 'platform'],
+  ['FIRST MILESTONE', 'milestone'],
+  ['SIGNATURE', 'signatureMechanic']
+];
+
+const STORE_KEY = 'microcure-design-lock-v1';
+const TOTAL = SECTIONS.reduce((n, s) => n + s.qs.length, 0);
+const Q_BY_ID = {};
+SECTIONS.forEach(sec => sec.qs.forEach(q => { Q_BY_ID[q.id] = q; }));
+
+let state = { answers: {}, notes: '', section: 0 };
+let generated = false;
+let saveTimer = null;
+
+const view = document.getElementById('view');
+const sectionNav = document.getElementById('sectionNav');
+const progressCount = document.getElementById('progressCount');
+const progressBar = document.getElementById('progressBar');
+const saveStatus = document.getElementById('saveStatus');
+const crumbNum = document.getElementById('crumbNum');
+const briefTopBtn = document.getElementById('briefTopBtn');
+const briefNavBtn = document.getElementById('briefNavBtn');
+const toastEl = document.getElementById('toast');
+
+function esc(value) {
+  return String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function isAnswered(id) {
+  const a = state.answers[id];
+  return Array.isArray(a) ? a.length > 0 : typeof a === 'string' && a.length > 0;
+}
+
+function answeredCount() {
+  return Object.keys(Q_BY_ID).filter(isAnswered).length;
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return;
+    if (parsed.answers && typeof parsed.answers === 'object') state.answers = parsed.answers;
+    if (typeof parsed.notes === 'string') state.notes = parsed.notes;
+    if (Number.isInteger(parsed.section)) state.section = Math.max(0, Math.min(SECTIONS.length - 1, parsed.section));
+  } catch (e) { /* storage unavailable — the quiz still works in memory */ }
+}
+
+function persistNow() {
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify(state));
+  } catch (e) { /* storage unavailable — the quiz still works in memory */ }
+}
+
+function persist() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify(state));
+      saveStatus.textContent = 'Saved just now';
+      saveStatus.style.color = 'var(--teal)';
+      setTimeout(() => {
+        saveStatus.textContent = 'Autosaved in this browser';
+        saveStatus.style.color = '';
+      }, 1300);
+    } catch (e) {
+      saveStatus.textContent = 'Local save unavailable';
+      saveStatus.style.color = 'var(--amber)';
+    }
+  }, 120);
+}
+
+window.addEventListener('pagehide', persistNow);
+
+function toast(message) {
+  toastEl.textContent = message;
+  toastEl.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => toastEl.classList.remove('show'), 1900);
+}
+
+/* ---------- RENDERING ---------- */
+function render() {
+  renderNav();
+  renderProgress();
+  renderView();
+  updateChrome();
+}
+
+function updateChrome() {
+  const isResults = generated;
+  crumbNum.textContent = isResults
+    ? 'DESIGN LOCK / COMPLETE'
+    : 'SECTION ' + SECTIONS[state.section].num + ' / ' + String(SECTIONS.length).padStart(2, '0');
+  briefTopBtn.textContent = isResults ? '← Edit answers' : 'View design brief';
+  briefNavBtn.textContent = isResults ? '← Edit answers' : 'Generate design brief →';
+}
+
+function renderNav() {
+  sectionNav.innerHTML = SECTIONS.map((sec, index) => {
+    const answered = sec.qs.filter(q => isAnswered(q.id)).length;
+    const cls = [
+      'nav-item',
+      index === state.section && !generated ? 'active' : '',
+      answered === sec.qs.length ? 'done' : ''
+    ].filter(Boolean).join(' ');
+    return '<button type="button" class="' + cls + '" data-section="' + index + '">' +
+      '<span class="nav-num">' + sec.num + '</span>' +
+      '<span class="nav-title">' + esc(sec.title) + '</span>' +
+      '<span class="nav-count">' + answered + '/' + sec.qs.length + '</span>' +
+      '</button>';
+  }).join('');
+}
+
+function renderProgress() {
+  const n = answeredCount();
+  progressCount.textContent = n + ' / ' + TOTAL;
+  progressBar.style.width = (TOTAL ? (n / TOTAL) * 100 : 0) + '%';
+}
+
+function renderView() {
+  if (generated) {
+    renderResults();
+    return;
+  }
+  const sec = SECTIONS[state.section];
+  const sectionAnswered = sec.qs.filter(q => isAnswered(q.id)).length;
+  const intro = state.section === 0
+    ? '<div class="intro">' +
+        '<p><strong>Answer as the person who will actually build this</strong>, not as the person who wants the biggest possible game. Every choice can be changed later; the brief is the point. There are no correct answers here — only commitments.</p>' +
+        '<div class="intro-meta">' +
+          '<span class="meta-chip">' + TOTAL + ' questions</span>' +
+          '<span class="meta-chip">10 sections</span>' +
+          '<span class="meta-chip">~15–20 min</span>' +
+          '<span class="meta-chip">Autosaves</span>' +
+          '<span class="meta-chip">Markdown export</span>' +
+        '</div>' +
+      '</div>'
+    : '';
+
+  const questions = sec.qs.map((q, i) => renderQuestion(sec, q, i)).join('');
+  const notes = state.section === SECTIONS.length - 1
+    ? '<div class="notes-card">' +
+        '<label for="notes">Anything the quiz did not ask?</label>' +
+        '<p class="notes-hint">A mechanic, reference, constraint, dream feature, or dealbreaker. Notes are appended to the brief.</p>' +
+        '<textarea id="notes" maxlength="1600" placeholder="Optional. Example: I want a mode where a second player controls the immune system…">' + esc(state.notes) + '</textarea>' +
+      '</div>'
+    : '';
+
+  const isLast = state.section === SECTIONS.length - 1;
+  const nextAction = isLast
+    ? '<button type="button" class="btn primary" id="finishBtn">Generate design lock →</button>'
+    : '<button type="button" class="btn primary" id="nextBtn">Next section →</button>';
+
+  view.innerHTML =
+    '<div class="section-head">' +
+      '<div class="kicker">Section ' + sec.num + ' / ' + String(SECTIONS.length).padStart(2, '0') + '</div>' +
+      '<h1>' + esc(sec.title) + '</h1>' +
+      '<p class="section-blurb">' + esc(sec.blurb) + '</p>' +
+    '</div>' +
+    intro +
+    questions +
+    notes +
+    '<div class="sec-actions">' +
+      '<div class="actions-group">' +
+        '<button type="button" class="btn ghost" id="prevBtn"' + (state.section === 0 ? ' disabled' : '') + '>← Back</button>' +
+      '</div>' +
+      '<div class="sec-progress"><b>' + sectionAnswered + '</b> / ' + sec.qs.length + ' answered in this section</div>' +
+      '<div class="actions-group">' + nextAction + '</div>' +
+    '</div>';
+}
+
+function renderQuestion(sec, q, index) {
+  const selected = Array.isArray(state.answers[q.id]) ? state.answers[q.id] : (isAnswered(q.id) ? [state.answers[q.id]] : []);
+  const multi = !!q.multi;
+  const opts = q.o.map((opt, oi) => {
+    const on = selected.includes(opt[0]);
+    return '<button type="button" class="opt" role="' + (multi ? 'checkbox' : 'radio') + '" aria-checked="' + on + '" data-qid="' + q.id + '" data-oi="' + oi + '">' +
+      '<span class="mark" aria-hidden="true"></span>' +
+      '<span class="copy"><span class="label">' + esc(opt[0]) + '</span><span class="detail">' + esc(opt[1]) + '</span></span>' +
+      '</button>';
+  }).join('');
+
+  return '<article class="q' + (multi ? ' multi-q' : '') + '" data-card="' + q.id + '">' +
+    '<div class="q-top"><span class="q-index">' + sec.num + '.' + String(index + 1).padStart(2, '0') + '</span><h3>' + esc(q.q) + '</h3></div>' +
+    '<p class="why">' + esc(q.why) + '</p>' +
+    (multi ? '<div class="q-note">Choose up to ' + q.multi + '</div>' : '') +
+    '<div class="opts" role="' + (multi ? 'group' : 'radiogroup') + '" aria-label="' + esc(q.q) + '">' + opts + '</div>' +
+    '</article>';
+}
+
+function paintQuestion(q) {
+  const selected = Array.isArray(state.answers[q.id]) ? state.answers[q.id] : (isAnswered(q.id) ? [state.answers[q.id]] : []);
+  document.querySelectorAll('.opt[data-qid="' + q.id + '"]').forEach(btn => {
+    const opt = q.o[Number(btn.dataset.oi)];
+    btn.setAttribute('aria-checked', String(selected.includes(opt[0])));
+  });
+}
+
+function choose(qid, oi) {
+  const q = Q_BY_ID[qid];
+  if (!q || !q.o[oi]) return;
+  const label = q.o[oi][0];
+
+  if (q.multi) {
+    const current = Array.isArray(state.answers[qid]) ? [...state.answers[qid]] : [];
+    const at = current.indexOf(label);
+    if (at >= 0) {
+      current.splice(at, 1);
+    } else {
+      if (current.length >= q.multi) {
+        toast('Pick up to ' + q.multi + ' for this question.');
+        const card = document.querySelector('.q[data-card="' + qid + '"]');
+        if (card) {
+          card.classList.remove('nudge');
+          void card.offsetWidth;
+          card.classList.add('nudge');
+        }
+        return;
+      }
+      current.push(label);
+    }
+    if (current.length) state.answers[qid] = current;
+    else delete state.answers[qid];
+  } else {
+    if (state.answers[qid] === label) delete state.answers[qid];
+    else state.answers[qid] = label;
+  }
+
+  paintQuestion(q);
+  renderProgress();
+  renderNav();
+  persist();
+}
+
+function getAnswerText(id) {
+  const a = state.answers[id];
+  if (!a) return '';
+  return Array.isArray(a) ? a.join(' · ') : a;
+}
+
+/* ---------- NAVIGATION ---------- */
+function goToSection(index) {
+  const next = Math.max(0, Math.min(SECTIONS.length - 1, index));
+  generated = false;
+  state.section = next;
+  render();
+  persist();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function finish() {
+  generated = true;
+  render();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ---------- BRIEF ---------- */
+function buildBrief() {
+  const n = answeredCount();
+  const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const lines = [];
+  lines.push('# MICROCURE — DESIGN LOCK');
+  lines.push('');
+  lines.push('_Generated ' + date + ' — ' + n + ' of ' + TOTAL + ' questions answered._');
+  lines.push('');
+  lines.push('## FINGERPRINT');
+  FINGERPRINT.forEach(([label, id]) => {
+    const value = getAnswerText(id) || '_(unanswered)_';
+    lines.push('- **' + label + ':** ' + value);
+  });
+  lines.push('');
+  lines.push('## DECISIONS');
+  SECTIONS.forEach(sec => {
+    lines.push('');
+    lines.push('### ' + sec.num + ' — ' + sec.title);
+    sec.qs.forEach(q => {
+      const value = getAnswerText(q.id) || '_(unanswered)_';
+      lines.push('- **' + q.q + '**');
+      lines.push('  → ' + value);
+    });
+  });
+  if (state.notes.trim()) {
+    lines.push('');
+    lines.push('## NOTES');
+    lines.push(state.notes.trim());
+  }
+  lines.push('');
+  lines.push('---');
+  lines.push('_Paste this brief into the MicroCure chat. The next step is the vertical-slice plan._');
+  return lines.join('\n');
+}
+
+function copyText(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text);
+  }
+  return new Promise((resolve, reject) => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+      resolve();
+    } catch (e) {
+      reject(e);
+    } finally {
+      ta.remove();
+    }
+  });
+}
+
+function downloadBrief() {
+  const brief = buildBrief();
+  const blob = new Blob([brief], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'microcure-design-lock.md';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast('Downloaded microcure-design-lock.md');
+}
+
+function renderResults() {
+  const brief = buildBrief();
+  const unanswered = TOTAL - answeredCount();
+  const fps = FINGERPRINT.map(([label, id]) => {
+    const value = getAnswerText(id);
+    return '<div class="fp' + (value ? '' : ' missing') + '">' +
+      '<div class="fp-label">' + label + '</div>' +
+      '<div class="fp-value">' + (value ? esc(value) : 'Not answered yet') + '</div>' +
+    '</div>';
+  }).join('');
+
+  const warning = unanswered > 0
+    ? '<div class="warning"><p>' + unanswered + ' question' + (unanswered === 1 ? ' is' : 's are') + ' still unanswered. They will be marked in the brief.</p>' +
+      '<button type="button" class="ghost-btn" id="reviewBtn">Review unanswered →</button></div>'
+    : '';
+
+  view.innerHTML =
+    '<div class="results-head">' +
+      '<div class="kicker">Design lock / complete</div>' +
+      '<h1>The game,<br>on one page.</h1>' +
+      '<p>This is the design brief. Copy it, download it, or paste it back into the MicroCure thread. It is specific enough to build from and short enough to keep on one screen.</p>' +
+    '</div>' +
+    '<div class="fingerprint">' + fps + '</div>' +
+    warning +
+    '<div class="brief-shell">' +
+      '<div class="brief-bar">' +
+        '<span class="live"><span class="pulse"></span> design_brief.md</span>' +
+        '<div class="brief-actions">' +
+          '<button type="button" class="btn" id="copyBtn">Copy</button>' +
+          '<button type="button" class="btn" id="downloadBtn">Download .md</button>' +
+          '<button type="button" class="btn" id="printBtn">Print</button>' +
+        '</div>' +
+      '</div>' +
+      '<pre class="brief" id="briefText"></pre>' +
+    '</div>' +
+    '<div class="result-actions">' +
+      '<button type="button" class="btn primary" id="backToQuestions">← Edit answers</button>' +
+      '<button type="button" class="btn ghost" id="restartBtn">Start over</button>' +
+    '</div>';
+
+  document.getElementById('briefText').textContent = brief;
+
+  document.getElementById('copyBtn').addEventListener('click', () => {
+    copyText(brief).then(() => toast('Brief copied to clipboard')).catch(() => toast('Copy failed — select the text manually'));
+  });
+  document.getElementById('downloadBtn').addEventListener('click', downloadBrief);
+  document.getElementById('printBtn').addEventListener('click', () => window.print());
+  document.getElementById('backToQuestions').addEventListener('click', () => {
+    generated = false;
+    render();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  document.getElementById('restartBtn').addEventListener('click', resetAll);
+  const reviewBtn = document.getElementById('reviewBtn');
+  if (reviewBtn) {
+    reviewBtn.addEventListener('click', () => {
+      const index = SECTIONS.findIndex(sec => sec.qs.some(q => !isAnswered(q.id)));
+      goToSection(index < 0 ? 0 : index);
+    });
+  }
+}
+
+/* ---------- RESET ---------- */
+function resetAll() {
+  if (!window.confirm('Erase every answer and start over? This cannot be undone.')) return;
+  state = { answers: {}, notes: '', section: 0 };
+  generated = false;
+  try { localStorage.removeItem(STORE_KEY); } catch (e) { /* ignore */ }
+  render();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  toast('All answers cleared');
+}
+
+/* ---------- EVENTS ---------- */
+view.addEventListener('click', (event) => {
+  const opt = event.target.closest('.opt');
+  if (opt) {
+    choose(opt.dataset.qid, Number(opt.dataset.oi));
+    return;
+  }
+  if (event.target.closest('#prevBtn')) { goToSection(state.section - 1); return; }
+  if (event.target.closest('#nextBtn')) { goToSection(state.section + 1); return; }
+  if (event.target.closest('#finishBtn')) { finish(); return; }
+});
+
+view.addEventListener('input', (event) => {
+  if (event.target.id === 'notes') {
+    state.notes = event.target.value;
+    persist();
+  }
+});
+
+sectionNav.addEventListener('click', (event) => {
+  const btn = event.target.closest('.nav-item');
+  if (btn) goToSection(Number(btn.dataset.section));
+});
+
+briefTopBtn.addEventListener('click', () => {
+  if (generated) {
+    generated = false;
+    render();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else {
+    finish();
+  }
+});
+
+briefNavBtn.addEventListener('click', () => {
+  if (generated) {
+    generated = false;
+    render();
+  } else {
+    finish();
+  }
+});
+
+document.getElementById('resetBtn')?.addEventListener('click', resetAll);
+
+/* ---------- BOOT ---------- */
+loadState();
+render();
+</script>
+</body>
+</html>
